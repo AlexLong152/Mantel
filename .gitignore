@@ -1,0 +1,58 @@
+/common-densities/density-modules/read-rho-example.out
+/common-densities/density-modules/test-compton-rho.out
+/common-densities/density-modules/output.dat
+
+#This is a centralised file to ignore certain type of files
+#This means each clone of the repo will follow these instructions
+#If you wish to exclude something from your specific repo, use
+#.git/info/exclude
+
+#Exclude files .o, .a, ~, .mod, .tmp etc
+*.[oa]
+*~
+*.mod
+*.tmp
+*.h5
+*.gz
+*.log
+*.aux
+*.synctex.gz
+
+#Exclude the executables
+common-densities/2Ndensity-module/testcompdens
+onebodyvia1Ndensity/onebodyvia1Ndensity
+twobodyvia2Ndensity/twobodyvia2Ndensity
+
+#Exclude .dat files in 1Ndensities: small, but too temporary to keep in repo
+densities-*/*/1Ndensities/*.dat
+densities-*/*/1Ndensities/*/*.dat
+densities-*/*/1Ndensities/*/*/*.dat
+densities-*/*/1Ndensities/*/*/*/*.dat
+densities-*/*/1Ndensities/*/*/*/*/*.dat
+
+#Exclude .dat files in onebodyvia1Ndensity/, twobodyvia2Ndensity/:
+#too temporary to keep in repo
+onebodyvia1Ndensity/*.dat
+twobodyvia2Ndensity/*.dat
+
+#Exclude contents of input/ & output/ folders in
+#onebodyvia1Ndensity/, twobodyvia2Ndensity/: too temporary to keep in repo
+# but INCLUDE the input templates
+
+onebodyvia1Ndensity/input*/*
+!onebodyvia1Ndensity/input*/template*
+onebodyvia1Ndensity/output*/*
+
+twobodyvia2Ndensity/input*/*
+!twobodyvia2Ndensity/input*/template*
+twobodyvia2Ndensity/output*/*
+
+#Exclude contents of results*/ folders -- these should not be part of code!
+results*/
+
+#Exclude all "working directories" which end on "-play"
+*-play/
+
+#Exclude "working directory"
+workinprogress/
+

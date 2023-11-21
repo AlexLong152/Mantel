@@ -1,0 +1,26 @@
+c     hgrie Oct 2022: v2.0 fewbody-Compton
+c     new Aug 2020, based on 3He density codes with the following datings/changes:
+c     hgrie May 2018: used to be part of 3HeCompt/common
+c     now part of common-densities, backward compatibility deliberately broken
+c     no changes yet
+c
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+c
+c	OQ2,OQ3,Oepsilon3,VaryA-type of calculation to be done
+c	lab,cm-frame in which results are to be calculated
+c	S,full-type of deuteron
+c	Bonn,Nijm-NN potential for deuteron wave function
+c	hgrie 19 Oct 2014: differentiated between VaryAn and VaryAp
+c	      implemented Odelta counting parameters
+c
+	integer OQ2,OQ3,OQ4,Oepsilon3,VaryAp,VaryAn,Odelta0,Odelta2,Odelta3,Odelta4
+	integer lab,cm
+	integer S,full
+	integer Bonn,Nijm
+c
+	parameter (OQ2=2,OQ3=3,Oepsilon3=4,OQ4=5)
+	parameter (Odelta0=OQ2,Odelta2=OQ3,Odelta3=Oepsilon3,Odelta4=6)
+	parameter (VaryAp=0,VaryAn=1)
+	parameter (lab=1,cm=2)
+	parameter (S=1,full=2)
+	parameter (Bonn=1,Nijm=2)

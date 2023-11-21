@@ -1,0 +1,148 @@
+c     hgrie Oct 2022: v2.0 fewbody-Compton
+c     hgrie Aug 2020/May 2022: v1.0 fewbody-Compton
+c
+c     new Aug 2020, based on 3He density codes with the following datings/changes:
+c
+c     hgrie May 2022:
+c     added 6Li numbers
+c     changed numbers for MDelta and replaced M(=MProton) in go4 and gafac2 by Mnucleon.
+c     Also adjusted B, mpi and Pi. 
+c     These changes are minuscule, but they ensure consistency with the numbers used
+c     in deuteron Compton's common/constants.def
+c     THE ONLY VALUES NOT YET MADE CONSISTENT between deuteron and fewbody are the numbers for
+c     c123 -- these depend also on the Delta and if it is relativistic or non-relativistic.
+c     Since a relativistic Delat is not yet included here (no Odelta4),
+c     that change is not yet made.
+c
+c     hgrie Sep 2021
+c     changed Mdeuteron to be given as Md = 2Mnucleon - B (≈1875.6133MeV)
+c     i.e. now MNucleon and B define Md; and B=2.2246 instead of 2.22457
+c     for other nuclei, this could be reversed, deriving B from Mtarget and Mnucleon.
+c     Old value was Md = 1873.775 -- beats me how that sneaked in.
+c     That old value apparenly came from Mnucleon=938MeV  =Mproton and B=2.225MeV
+c     Fortunately, this has no major consequences.
+c	
+c     hgrie May 2018: used to be part of 3HeCompt/common
+c     now part of common-densities, backward compatibility deliberately broken
+c     redefined variable name Mhe=>M3He
+c
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+c hgrie June 2014: added Delta and DeltaPi parameters from deuteron code
+
+c
+c  This should be self-explanatory!
+c
+        real*8 Pi
+        complex*16 ci,c0
+c
+        real*8 M6Li,M4He,M3He,Md,Mproton,Mneutron,Mnucleon,B
+	real*8 mpi,mpi0,HC,fpi,ga,kappap,kappan,ep,en,alphaem
+        real*8 muv,mup,mun
+        real*8 kappas,kappanu
+        
+c BS: removed gpiNN
+c	real*8 gpiNN
+        real*8 mpi2,mpi02,fpi2,gafac,gafac2,go4
+        real*8 converttomicrobarns
+c        real*8 Deltaalphap,Deltabetap
+c        real*8 Deltaalphan,Deltabetan
+        real*8 c1,c2,c3
+        real*8 taup,taun
+c
+        parameter (Pi=3.141592653589794E0,ci=dcmplx(0.0d0,1.0d0))
+        parameter (c0=dcmplx(0.0d0,0.0d0))
+        
+c	parameter (gpinn=14.4)
+
+c  hgrie: all numbers taken from rescattering code unless specified otherwise
+c       take AVERAGE nucleon mass, NOT proton mass!: M=938.3d0 before v6
+	parameter (mpi=139.5675d0,mpi0=134.97d0)
+	parameter (Mproton=938.27231d0,Mneutron=939.56563d0) ! proton, neutron mass
+	parameter (Mnucleon=(Mproton+Mneutron)/2.)              ! avg nucleon mass: 938.919..
+	
+        parameter (fpi=92.42,alphaem=1.d0/137.03599d0,HC=197.327d0)
+        parameter (ga=1.267d0)
+c	parameter (ga=sqrt(gpinn*4.d0*Pi)*fpi/M)
+        parameter (kappap=1.79285,kappan=-1.91304,ep=1.d0,en=0.d0)
+        parameter (kappas=kappap+kappan,kappanu=kappap-kappan)
+        parameter (mup=kappap + ep,mun=kappan + en,muv=mup - mun)
+        parameter (mpi2=mpi**2,fpi2=fpi**2,mpi02=mpi0**2)
+        parameter (gafac=ga**2/(8.d0*pi*fpi2),gafac2=gafac)
+        parameter (go4=ga**2/(4*Mnucleon*fpi2))
+
+c        parameter (gafac2=gpinn/(2.d0*Mnucleon**2))
+        parameter (converttomicrobarns=0.38939*1000000000.0d0)
+        parameter (B=2.2246)
+	parameter (Md=2*Mnucleon-B)
+
+c 	better define following via mass of nucleon constituents minus binding energy, or binding energy as difference?  			   
+        parameter (M3He=2808.4d0,M4He=3727.4d0)
+	
+c 6Li from Nuclear Chart at iaea.org, translated from AMU to MeV (1/12 of 12C mass)
+	parameter (M6Li=6.0151228874d0*931.49432d0)
+c
+c    O(Q^4) HBChiPT values (shift only):
+c
+c	parameter (Deltaalphap=-1.d0/(690.d0)**3,Deltabetap=1.d0/(624.d0)**3)
+c	parameter(Deltaalphan=1.d0/(775.d0)**3,Deltabetan=1.d0/(439.d0)**3)
+c
+c    Experimental values (shift only):
+c
+c	Older proton value (?MacGibbon et al.)
+c	parameter (Deltaalphap=-1.08d-9,Deltabetap=2.51d-9)
+c
+c	Newer proton value:
+c	parameter (Deltaalphap=-0.950d-9,Deltabetap=0.609d-9)
+c	
+c	Judith's chocies: alphap=12.0, betap=2.0
+c        parameter (Deltaalphap=-0.9233d-9,Deltabetap=1.334d-9)
+c
+c	"Sensible" neutron values
+c        parameter (Deltaalphan=7.17d-10,Deltabetan=3.58d-9)
+c
+c       neutron parameters from SAL (alphan=-7.8,betan=8.8)
+c       parameter (Deltaalphan=-1.39d-8,Deltabetan=1.57d-8)
+c
+c       O(Q^3) values for polarizability approx.:
+c
+c	parameter (Deltaalphap=5.d0/12.d0*gafac/mpi)
+c	parameter (Deltabetap=1.d0/24.d0*gafac/mpi)
+c	parameter (Deltaalphan=Deltaalphap,Deltabetan=Deltabetap)
+c
+c    Values to switch off all O(Q^4) terms:
+c
+c	parameter (Deltaalphap=0.d0,Deltabetap=0.d0)
+c	parameter (Deltaalphan=0.d0,Deltabetan=0.d0)
+c
+c    Constants from LpiN2
+c
+        parameter (c1=-0.473449,c2=1.33626,c3=-2.22112)
+c
+c    Values from paper, ?converted to units of mpi^{-1}
+c
+c	parameter (c1=-0.113,c2=0.349,c3=0.530)
+c
+c
+c    Third-component of isospin for proton and neutron
+c
+        parameter (taup=1.0,taun=-1.0)
+
+c    start modifications hgrie June 2014
+c  for Judith's implementation of Delta+DeltaPi amps
+	real*8 b1,Mdelta,delta,gpind
+	real*8 e
+
+      parameter (e = dsqrt(4*Pi/137))
+c     Judith's improved parameter set, version I
+c         PARAMETER (b1 = 4.8d0, gpind = 1.425d0, Mdelta=1232.0, delta = Mdelta-Mnucleon)
+c     Judith's improved parameter set, version II.
+c     This is the "preferred" one, used in e²δ² fit of review.
+      PARAMETER (b1 = 5.0d0, gpind = 1.425d0, Mdelta=1232.0, delta = Mdelta-Mnucleon)
+c     Robert's initial parameter set
+c         parameter (b1 = 4.67d0, gpind = 1.125d0, Mdelta = 1210.0, delta = Mdelta-Mnucleon)
+      
+
+
+
+
+

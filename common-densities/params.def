@@ -1,0 +1,29 @@
+c     hgrie Oct 2022: v2.0 fewbody-Compton
+c     new Aug 2020, based on 3He density codes with the following datings/changes:
+c     hgrie May 2018: used to be part of 3HeCompt/common
+c     now part of common-densities, backward compatibility deliberately broken
+c     no changes yet
+c
+c	hgrie May 2019: increased maximum array size -- needs compiler option
+c	              -mcmodel=large
+c       hgrie May 2020: there ised to be a parameter Nrmax,
+c             but it's actually never used, so I eliminated it.
+c	      Also replaced Nthmax,Nphimax => Nangmax
+c	      since Nthmax and Nphimax should be the same size.
+c**********************************************************************
+c
+c	Maximum size of each quadrature array
+c	
+	integer Npmax,Nangmax,Nxmax
+c
+	parameter (Npmax=8192,Nangmax=1000,Nxmax=8192)
+c
+c	hgrie May 2020:
+c	This is the max one can do for Nangmax without hitting a
+c	SegmentationFault in programme execution.
+c	I guess the reason is that Mangmax parametrises a 2-dim array,
+c	while the others are 1-dim arrays.
+c	If one wanted, one could rewrite the code to use a smaller array
+c	with the LL method. Right now, only the diagonals are filled up
+c	when the LL method is used, so there is a huge 2dim array
+c	with largely unused entries....
