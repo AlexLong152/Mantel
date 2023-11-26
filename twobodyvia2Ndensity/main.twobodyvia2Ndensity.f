@@ -16,7 +16,7 @@ c     j12max can now be specified in input file: default is j12max=2 for onebody
 c     as in previous runs (where they were hardwired in code).
 c     These values give MEs which are converged to better than 0.7% -- see documentation/.
 c
-c     twoSmax/twoMz dependence: only via array size of ResultAB
+c     twoSmax/twoMz dependence: only via array size of Result()
 cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 c     NOTE ON UNITS hgrie Nov 2023
 c      
@@ -94,7 +94,7 @@ c                     twoSnucl: 2 x spin of target nucleus
 c           For all such variables, run over 2xQM values.
 c                  Examples:
 c                     in do-loops: twoMz runs from +twoSnucl to -twoSnucl, in steps of -2
-c                     in array: Resultxx(twoMzp,twoMz) runs over   (-twoSnucl:twoSnucl,-twoSnucl:twoSnucl)
+c                     in array: Result(extQnum,twoMzp,twoMz) runs over   (1:extQnumlimit,-twoSnucl:twoSnucl,-twoSnucl:twoSnucl)
 c
 c     This numbering agrees with Andreas' assignments of magnetic quantum numbers.
 c     In ARRAYs, this means a slight waste of space since we leave many array entries unused.
@@ -127,8 +127,6 @@ c     use symmetry to calculate only amplitudes with 3He out-spin +1/2
 c     modified hgrie 20 June 2014: add option to use LebedevLaikov or Gaussian
 c     integration for theta & phi separately,
 c     for solid angle integral in (12) system 
-c     modifed by hgrie Oct 2014:
-c     use spherical or cartesian basis, and symmetry or not in either.
       
 cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc   
 
@@ -160,13 +158,9 @@ c     inUnitno-unit where input information is stored
 c     outUnitno-unit where output is written
 c     kgamma-photon momentum in cm frame in units of MeV
 c     Nangles-number of angles at which calculation is to be done
-c     thetaL-photon scattering angle in lab frame, in degrees
 c     thetacm-photon scattering angle in cm frame, in radians
 c     calctype-which calculation to do
 c     
-c     frame-which frame the results are to be presented for
-c     1=lab. frame
-c     2=c.m. frame
 c     outfile-name of output file
 c     
       integer inUnitno,outUnitno
@@ -174,7 +168,7 @@ c
       real*8 Egamma,kgamma,thetaL,thetacm,Elow,Ehigh,Einterval
       
       real*8 thetaLow,thetaHigh,thetaInterval
-      integer calctype,frame,Nangles,Nenergy,ienergy,j ! number of energies/angles; index for energies/angles
+      integer calctype,Nangles,Nenergy,ienergy,j ! number of energies/angles; index for energies/angles
       character*200 descriptors  ! additional descriptors of calculation
 
       integer,parameter :: variedA = 0 ! no variedA since no 1N amplitude, but define here for makeoutputfilename()
@@ -230,28 +224,23 @@ c
 c     
 c**********************************************************************
 c     
-      integer m12,mt12 ! projections of total ang mom & isospin of (12) subsystem: automatically integers
+      integer m12,mt12          ! projections of total ang mom & isospin of (12) subsystem: automatically integers
       
       integer i,ip12
-      integer l12,s12,j12,t12 ! orb ang mom, spin, total ang mom, isospin of (12): automatically integers
+      integer l12,s12,j12,t12   ! orb ang mom, spin, total ang mom, isospin of (12): automatically integers
       
       integer j12max            ! max total ang mom in (12) subsystem -- =1 suffices for 1% accuracy.
       
 c     projections of target nucleus' in-spin, out-spin
       integer twoMz,twoMzp      !  -- these two not use right now
       
-c     hgrie June 2014: added variable twoMzplimit; changed by flag "nosymmetry" in input file.
-c     Value twoMzplimit = 0 calculates half of the amplitudes, the other amps then from symmetry
-c     Value twoMzplimit = -twoSnucl calculates all amplitudes
-      integer twoMzplimit,twoMzlimit ! latter only for verbose output
+      integer extQnum, extQnumlimit      ! counter and number of combined external quantum numbers of in and out state
+      
+      integer symmetry          ! whether and which specific package Usesymmetry() should be used for process -- NOT YET IMPLEMENTED!!!
 
       real*8 frac
 
-      complex*16, allocatable :: Resultxx(:,:),Resultxy(:,:) ! twoMz from -twoSnucl to twoSnucl, stepsize 2; rest blank.
-      complex*16, allocatable :: Resultyx(:,:),Resultyy(:,:) ! twoMz from -twoSnucl to twoSnucl, stepsize 2; rest blank.
-c     That means arrays are less than 2^2=4 times bigger than need be, but that's ok since quite small anyway. 
-      
-      logical cartesian         ! hgrie Oct 2014: for output in Cartesian basis of photon polarisations
+      complex*16, allocatable :: Result(:,:,:) ! extQnum from 1 to extQnumlimit; twoMzp from -twoSnucl to twoSnucl, stepsize 2; twoMz from -twoSnucl to twoSnucl, stepsize 2; rest blank.
       
       integer verbosity         ! verbosity index for stdout hgrie June 2014
 
@@ -268,14 +257,14 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
       write(*,*) 
       write(*,*) "================================================================================"
-      write(*,*) "Twobody Contributions to Few-Nucleon Compton Scattering Calculated Via 2N-Density Matrix"
+      write(*,*) "Twobody Contributions to Few-Nucleon Processes Calculated Via 2N-Density Matrix"
       write(*,*) "================================================================================"
-      write(*,*) "   Version 1.0"
-      write(*,*) "      D. Phillips/A. Nogga/hgrie starting August 2020   "
-      write(*,*) "      based on 3He codes: D. Phillips/A. Nogga/hgrie starting May 2018"
-      write(*,*) "                          D. Phillips/B. Strasberg/hgrie starting June 2014"
-      write(*,*) "                          with A. Margaryan 2016-17, modifying codes by D. Shukla 2007/8"
-      write(*,*)
+      write(*,*) "   Mantle Code Version 1.0"
+      write(*,*) "      Alexander Long/hgrie starting November 2023   "
+      write(*,*) "      based on Compton density code: D. Phillips/A. Nogga/hgrie starting August 2020"
+      write(*,*) "      based on 3He Compton codes: D. Phillips/A. Nogga/hgrie starting May 2018"
+      write(*,*) "                                  D. Phillips/B. Strasberg/hgrie starting June 2014"
+      write(*,*) "                                  with A. Margaryan 2016-17, modifying codes by D. Shukla 2007/8"
 c**********************************************************************
 c     Reading the input file from command line
 c**********************************************************************
@@ -293,6 +282,10 @@ c     if you have 1 argument, write it to inputfile, otherwise stop
 c     
 c     
 c**********************************************************************
+c     Report kernel process and version
+      call KernelGreeting(verbosity)
+      
+c**********************************************************************
 c     Reading in data from the input file
 c**********************************************************************
       inUnitno=13
@@ -301,11 +294,11 @@ c**********************************************************************
       open(unit=inUnitno, file= inputfile, status= 'OLD',iostat=test)
       if (test .ne. 0) stop "*** ERROR: Could not open input file!!! Aborting."
       
-      call ReadinputCommon(Elow,Ehigh,Einterval,frame,
+      call ReadinputCommon(Elow,Ehigh,Einterval,
      &     thetaLow,thetaHigh,thetaInterval,
      &     outfile,descriptors,densityFileName,inUnitno,
-     &     nucleus,Anucl,twoSnucl,Mnucl,
-     &     twoMzplimit,cartesian,verbosity)
+     &     nucleus,Anucl,twoSnucl,Mnucl,extQnumlimit,
+     &     symmetry,verbosity)
 c      
       call ReadinputTwobody(inUnitno,calctype,descriptors,
 c---- Variables to control radial quadrature settings------------------------
@@ -371,31 +364,13 @@ c**********************************************************************
 c     Loop over angles
 c**********************************************************************
          do i=1,Nangles
-            if (frame.eq.lab) then
-               kgamma=Egamma/sqrt(1.d0 + 2.0d0*Egamma/Mnucl)
-c     BS: new theta algebra due to changed input
-c     hgrie Sep 2014: if thetaL is ZERO degrees, actual calculated at 1 Degree  
-               thetaL=(thetaLow+real(i-1)*thetaInterval)*Pi/180.d0
-               if (thetaL.eq.0.0d0) then
-                  thetaL=1.0d0*Pi/180.d0
-                  write(*,*) "   Replaced input angle 0 deg with 1 deg."
-               end if   
-               frac=(Mnucl + (Mnucl + Egamma)*(dcos(thetaL) - 1.0d0))/
-     &              (Mnucl + Egamma*(1.d0 - dcos(thetaL)))
-               thetacm=dacos(frac)
-            else
-               thetacm=(thetaLow+real(i-1)*thetaInterval)*Pi/180.d0
-               if (thetacm.eq.0.0d0) then
-                  thetacm=1.0d0*Pi/180.d0
-                  write(*,*) "   Replaced input angle 0 deg with 1 deg."
-               end if   
-               kgamma=Egamma      
-            end if
-            if (frame.eq.cm) then
-               write (outUnitno,*) "cm ","omega = ",Egamma,"thetacm = ",thetacm*180.0/Pi
-            else if (frame.eq.lab) then
-               write (outUnitno,*) "lab ","omega = ",Egamma,"thetalab = ",thetaL*180.0/Pi
+            thetacm=(thetaLow+real(i-1)*thetaInterval)*Pi/180.d0
+            if (thetacm.eq.0.0d0) then
+               thetacm=1.0d0*Pi/180.d0
+               write(*,*) "   Replaced input angle 0 deg with 1 deg."
             end if   
+            kgamma=Egamma      
+            write (outUnitno,*) "cm ","omega = ",Egamma,"thetacm = ",thetacm*180.0/Pi
             write(*,*)
             write(*,*) '%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%'
             write(*,*) 'Calculating amps: theta =',thetacm*180.0/Pi,'deg: angle #',i
@@ -405,14 +380,8 @@ c**********************************************************************
 c**********************************************************************
 c     be a good boy and initialise everything to 0, overwriting entries from previous ω/θ
 c**********************************************************************
-            allocate(Resultxx(-twoSnucl:twoSnucl,-twoSnucl:twoSnucl))
-            allocate(Resultxy(-twoSnucl:twoSnucl,-twoSnucl:twoSnucl))
-            allocate(Resultyx(-twoSnucl:twoSnucl,-twoSnucl:twoSnucl))
-            allocate(Resultyy(-twoSnucl:twoSnucl,-twoSnucl:twoSnucl))
-            Resultxx=c0
-            Resultxy=c0
-            Resultyx=c0
-            Resultyy=c0
+            allocate(Result(1:extQnumlimit,-twoSnucl:twoSnucl,-twoSnucl:twoSnucl))
+            Result=c0
 c**********************************************************************
 c     hgrie June 2017: create name of 1Ndensity file for given energy and angle, unpack it
 c     define correct formats for energy and angle
@@ -448,62 +417,27 @@ c**********************************************************************
                         do m12=-j12,j12             ! spin projection (12)
                            do ip12=1,NP12           ! integration over momentum magnitude (12)
                               call twobodyfinalstatesumsvia2Ndensity(
-     &                             Resultxx,Resultxy,Resultyx,Resultyy,
-     &                             Anucl,twoSnucl,twoMzplimit,j12,m12,l12,s12,t12,mt12,
+     &                             Result,
+     &                             Anucl,twoSnucl,extQnumlimit,j12,m12,l12,s12,t12,mt12,
      &                             k,thetacm,
      &                             ip12,P12MAG(ip12),AP12MAG(ip12),     
      &                             p12MAG,AP12MAG,NP12,                                 
      &                             th12,phi12,Nth12,Nphi12,j12max,
-     &                             AngularType12,angweight12,calctype,verbosity)   
+     &                             AngularType12,angweight12,calctype,symmetry,verbosity)   
                            end do !ip12
                         end do    !m12
                      end do       !l12
                   end do          !s12
                end do             !j12
             end do                !mt12
-            
-ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc            
-            if (verbosity.ge.3) then
-               do twoMzp=twoSnucl,twoMzplimit,-2
-c         for Mzp=0, run only over Mz>=0 -- that's still 2 more than necessary, but good enough -- see cure below
-                  if ((twoMzp.eq.0).and.(twoMzplimit.eq.0)) then
-                     twoMzlimit = 0
-                  else
-                     twoMzlimit = -twoSnucl
-                  end if   
-                  do twoMz=twoSnucl,twoMzlimit,-2
-                     write (*,*) "Resultxx(twoMzp=",twoMzp,", twoMz=",twoMz,"): ",Resultxx(twoMzp,twoMz)
-c hgrie Aug 2020: now cure: for Mzp=Mz=0, only calculate xx and yy, since xy and yx must be zero               
-                     if ((twoMzplimit.eq.0).and.(twoMzp.eq.0).and.(twoMz.eq.0)) then
-                        continue
-                     else
-                        write (*,*) "Resultxy(twoMzp=",twoMzp,", twoMz=",twoMz,"): ",Resultxy(twoMzp,twoMz)
-                        write (*,*) "Resultyx(twoMzp=",twoMzp,", twoMz=",twoMz,"): ",Resultyx(twoMzp,twoMz)
-                     end if
-c      end cure
-                     write (*,*) "Resultyy(twoMzp=",twoMzp,", twoMz=",twoMz,"): ",Resultyy(twoMzp,twoMz)
-                  end do ! twoMz
-               end do    ! twoMzp
-            end if       ! verbosity
 cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-            if (verbosity.ge.0) then
-               do twoMzp=twoSnucl,-twoSnucl,-2
-                  do twoMz=twoSnucl,-twoSnucl,-2
-                     write (*,*) "Resultxx(twoMzp=",twoMzp,", twoMz=",twoMz,"): ",Resultxx(twoMzp,twoMz)
-                     write (*,*) "Resultxy(twoMzp=",twoMzp,", twoMz=",twoMz,"): ",Resultxy(twoMzp,twoMz)
-                     write (*,*) "Resultyx(twoMzp=",twoMzp,", twoMz=",twoMz,"): ",Resultyx(twoMzp,twoMz)
-                     write (*,*) "Resultyy(twoMzp=",twoMzp,", twoMz=",twoMz,"): ",Resultyy(twoMzp,twoMz)
-                  end do ! twoMz
-               end do    ! twoMzp
-            end if       ! verbosity
-cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-c     hgrie May 2018: symmetry and output
-            call outputroutine(outUnitno,cartesian,twoSnucl,twoMzplimit,
-     &           Resultxx,Resultxy,Resultyx,Resultyy,verbosity)
+c     hgrie May 2018: output to file, to stdout(if wanted) and to mathematica friendly format (if wanted)
+            call outputroutine(outUnitno,twoSnucl,extQnumlimit,
+     &           Result,verbosity)
             
 c     be a good boy and deallocate arrays. Compilers do that automatically for simple programs. Better safe than sorry.
-            deallocate (Resultxx,Resultxy,Resultyx,Resultyy, STAT=test ) ! test becomes nonzero if this fails
-            if (test .ne. 0) stop "*** ERROR: Arrays ResultAB: Deallocation error. Abort."
+            deallocate (Result, STAT=test ) ! test becomes nonzero if this fails
+            if (test .ne. 0) stop "*** ERROR: Arrays Result(): Deallocation error. Abort."
 cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
          end do                 ! Nangles

@@ -1,13 +1,13 @@
 c     hgrie Oct 2022: v2.0 fewbody-Compton
-c     ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 c     hgrie 17 Nov 2023: split the following subroutines into new file spinstructures.f and renamed two for more intuitive names:
 
-c         singlesigma
-c         Calchold => doublesigma
+c         singlesigma => singlesigmasym
+c         Calchold    => doublesigmasym
 c      
 c     This way, spintricks*f only contains individual diagram
 c     contributions and not these routines which are generally relevant for spin structures.
-c     ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 c     hgrie 25 Sep 2023: correction in subroutine singlesigma()
 c     which computes (σ1+σ2).A and enters in Compton at e²δ⁴ (i.e. affects no publication!)
 c     Alex Long found a missing sign in line 2420, which should read
@@ -36,29 +36,8 @@ c     no changes yet
 c     twoSmax/twoMz dependence: none, only on quantum numbers of (12) subsystem
 ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 c     contains:
-c              
-c              CalcCompton2BAxx
-c              CalcCompton2BAxy
-c              CalcCompton2BAyx
-c              CalcCompton2BAyy
-c              CalcCompton2BB
-c              CalcCompton2BCx
-c              CalcCompton2BCy
-c              CalcCompton2BDx
-c              CalcCompton2BDy
-c              CalcCompton2BE
-c              CalcCompton2Bfg
-c              CalcCompton2Bfg2
-c              CalcCompton2Bhi
-c              CalcCompton2Bhi2
-c              CalcCompton2Bjm
-c              CalcCompton2Bno
-c              CalcCompton2Bfgfg2ni
-c              CalcCompton2Bhini
-c              CalcCompton2Bhini2
-c              CalcCompton2Baa2hihi2ni
-c              CalcCompton2Bd2jmni
-c              CalcCompton2Bdnoni
+c               CalcKernel2BAsym
+c               CalcKernel2BBsym
 c              
 cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 c     DRP Feb 2017: check of all factors and extensive commenting. 
@@ -66,15 +45,13 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 c     Aug-Oct 2016/hgrie Feb 2017: Arman added OQ4 diagrams
 c====================================================================
 c     
-      subroutine CalcCompton2BA(Comp2Bxx,Comp2Byx,Comp2Bxy,Comp2Byy,
+      subroutine CalcKernel2BAsym(Kernel2B,
      &     factor,
-     &     Sp,S,verbosity)
+     &     Sp,S,extQnumlimit,verbosity)
 c     
 c********************************************************************
 c     
 c     Calculates diagram A
-c     
-c     Note: 1=+,2=-
 c     
 c********************************************************************
 c     
@@ -85,50 +62,45 @@ c
       include '../common-densities/constants.def'
 c     
 c********************************************************************
-c     
 c     INPUT/OUTPUT VARIABLE:
 c     
-      complex*16 Comp2Bxx(0:1,-1:1,0:1,-1:1),Comp2Byx(0:1,-1:1,0:1,-1:1)
-      complex*16  Comp2Bxy(0:1,-1:1,0:1,-1:1),Comp2Byy(0:1,-1:1,0:1,-1:1)
-      complex*16 Comp2Bpx(0:1,-1:1,0:1,-1:1),Comp2Bpy(0:1,-1:1,0:1,-1:1)
-      complex*16  hold(0:1,-1:1,0:1,-1:1)
+      complex*16,intent(inout) :: Kernel2B(1:extQnumlimit,0:1,-1:1,0:1,-1:1)
+c      complex*16 Kernel2Bpx(0:1,-1:1,0:1,-1:1),Kernel2Bpy(0:1,-1:1,0:1,-1:1)
 c     
 c********************************************************************
-c     
 c     INPUT VARIABLES:
 c     
-      real*8 thetacm,factor,factor12,polnfacx,polnfacy,polnfac12x
-      real*8 polnfac12y,k
-      real*8 qpppx,qpppy,qppx,qppy,qppz
-      real*8 qppp12x,qppp12y,qpp12x,qpp12y,qpp12z
-      integer Ms,Msp,Sp,S
-      integer verbosity
+      real*8,intent(in)  :: factor
+      integer,intent(in) :: Sp,S
+      integer,intent(in) :: extQnumlimit
+      integer,intent(in) :: verbosity
+c     
+c********************************************************************
+c     INTERNAL VARIABLES:
+c      
+      complex*16 hold(0:1,-1:1,0:1,-1:1)
+      integer Msp,Ms
 c     
 ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-c     εx: mapped to xx   
-c     singlesigma(hold,Ax,Ay,Az,factor,Sp,S,verbosity)
-c     calculates 2*S.A, where S=(sigma1+sigma2)/2
-c      call singlesigma(hold,-qppx,-qppy,-qppz,factor,Sp,S,verbosity)   
-      call singlesigma(hold, 1.d0, 0.d0, 0.d0, factor,Sp,S,verbosity)
+c     εx:
+      call singlesigmasym(hold,1.d0,0.d0,0.d0,Sp,S,verbosity)
       do Msp=-Sp,Sp
          do Ms=-S,S
-            Comp2Bxx(Sp,Msp,S,Ms)=Comp2Bxx(Sp,Msp,S,Ms)+hold(Sp,Msp,S,Ms)
+            Kernel2B(1,Sp,Msp,S,Ms) = Kernel2B(1,Sp,Msp,S,Ms) + factor*hold(Sp,Msp,S,Ms)
          end do
       end do  
-c     εy: mapped to xy
-c      call singlesigma(hold,-qppx,-qppy,-qppz,factor,Sp,S,verbosity)   
-      call singlesigma(hold, 0.d0, 1.d0, 0.d0, factor,Sp,S,verbosity)
+c     εy:
+      call singlesigmasym(hold,0.d0,1.d0,0.d0,Sp,S,verbosity)
       do Msp=-Sp,Sp
          do Ms=-S,S
-            Comp2Bxy(Sp,Msp,S,Ms)=Comp2Bxy(Sp,Msp,S,Ms)+hold(Sp,Msp,S,Ms)
+            Kernel2B(2,Sp,Msp,S,Ms) = Kernel2B(2,Sp,Msp,S,Ms) + factor*hold(Sp,Msp,S,Ms)
          end do
       end do  
-c     εz: mapped to yx
-c      call singlesigma(hold,-qppx,-qppy,-qppz,factor,Sp,S,verbosity)   
-      call singlesigma(hold, 0.d0, 0.d0, 1.d0, factor,Sp,S,verbosity)
+c     εz:
+      call singlesigmasym(hold,0.d0,0.d0,1.d0,Sp,S,verbosity)
       do Msp=-Sp,Sp
          do Ms=-S,S
-            Comp2Byx(Sp,Msp,S,Ms)=Comp2Byx(Sp,Msp,S,Ms)+hold(Sp,Msp,S,Ms)
+            Kernel2B(3,Sp,Msp,S,Ms) = Kernel2B(3,Sp,Msp,S,Ms) + factor*hold(Sp,Msp,S,Ms)
          end do
       end do  
 ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc 
@@ -139,10 +111,10 @@ ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 c====================================================================
 c====================================================================
 c     
-      subroutine CalcCompton2BB(Comp2Bxx,Comp2Byx,Comp2Bxy,Comp2Byy,
+      subroutine CalcKernel2BBsym(Kernel2B,
      &     factor,
      &     Ax,Ay,Az,Bx,By,Bz, ! A.σ, B.ε
-     &     Sp,S,verbosity)
+     &     Sp,S,extQnumlimit,verbosity)
 c     
 c********************************************************************
 c     
@@ -157,36 +129,36 @@ c
       include '../common-densities/constants.def'
 c     
 c********************************************************************
-c     
 c     INPUT/OUTPUT VARIABLE:
 c     
-      complex*16 Comp2Bxx(0:1,-1:1,0:1,-1:1),Comp2Byx(0:1,-1:1,0:1,-1:1)
-      complex*16  Comp2Bxy(0:1,-1:1,0:1,-1:1),Comp2Byy(0:1,-1:1,0:1,-1:1)
-      complex*16 Comp2Bpx(0:1,-1:1,0:1,-1:1),Comp2Bpy(0:1,-1:1,0:1,-1:1)
-      complex*16  hold(0:1,-1:1,0:1,-1:1)
+      complex*16, intent(inout) :: Kernel2B(1:extQnumlimit,0:1,-1:1,0:1,-1:1)
+c      complex*16 Kernel2Bpx(0:1,-1:1,0:1,-1:1),Kernel2Bpy(0:1,-1:1,0:1,-1:1)
 c     
 c********************************************************************
-c     
 c     INPUT VARIABLES:
 c     
-      real*8 thetacm,factor
-      real*8 Ax,Ay,Az,Bx,By,Bz
-      integer Ms,Msp,Sp,S
-      integer verbosity
+      real*8,intent(in)  :: factor
+      real*8,intent(in)  :: Ax,Ay,Az,Bx,By,Bz
+      integer,intent(in) :: Sp,S
+      integer,intent(in) :: extQnumlimit
+      integer,intent(in) :: verbosity
+c
+c********************************************************************
+c     INTERNAL VARIABLES:
+c      
+      complex*16 hold(0:1,-1:1,0:1,-1:1)
+      integer Msp,Ms
 c     
 ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-c     singlesigma(hold,Ax,Ay,Az,factor,Sp,S,verbosity)
-c     calculates 2*S.A, where S=(sigma1+sigma2)/2
-c      call singlesigma(hold,-qppx,-qppy,-qppz,factor,Sp,S,verbosity)   
-      call singlesigma(hold, Ax, Ay, Az, factor,Sp,S,verbosity)
+      call singlesigmasym(hold,Ax,Ay,Az,Sp,S,verbosity)
       do Msp=-Sp,Sp
          do Ms=-S,S
-c     εx: mapped to xx   
-            Comp2Bxx(Sp,Msp,S,Ms)=Comp2Bxx(Sp,Msp,S,Ms)+hold(Sp,Msp,S,Ms)*Bx
-c     εy: mapped to xy   
-            Comp2Bxy(Sp,Msp,S,Ms)=Comp2Bxy(Sp,Msp,S,Ms)+hold(Sp,Msp,S,Ms)*By
-c     εz: mapped to yx   
-            Comp2Byx(Sp,Msp,S,Ms)=Comp2Byx(Sp,Msp,S,Ms)+hold(Sp,Msp,S,Ms)*Bz
+c     εx:
+            Kernel2B(1,Sp,Msp,S,Ms) = Kernel2B(1,Sp,Msp,S,Ms) + factor*hold(Sp,Msp,S,Ms)*Bx
+c     εy:
+            Kernel2B(2,Sp,Msp,S,Ms) = Kernel2B(2,Sp,Msp,S,Ms) + factor*hold(Sp,Msp,S,Ms)*By
+c     εz:
+            Kernel2B(3,Sp,Msp,S,Ms) = Kernel2B(3,Sp,Msp,S,Ms) + factor*hold(Sp,Msp,S,Ms)*Bz
          end do
       end do  
 ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc 

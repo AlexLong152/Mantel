@@ -1,9 +1,36 @@
+c
+c     Organisation of orders:
+c     First Odelta0 computation -- terminates after that if not more needed.
+c     Else moves on to Odelta2 computation -- terminates after that if not more needed.
+c     Else moves on to Odelta3 computation -- etc.
+c
+c
+c
+ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+c     hgrie Nov 2023: show kernel process and version
+c     included here since will change when kernel changes
+      subroutine KernelGreeting(verbosity)
+      implicit none
+      integer,intent(in) :: verbosity         ! verbosity index for stdout
+ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+      write(*,*) "--------------------------------------------------------------------------------"
+      write(*,*) "Kernel: Twobody Pion Photoproduction at Threshold"
+      write(*,*) "--------------------------------------------------------------------------------"
+      write(*,*) "   Kernel Code Version 1.0"
+      write(*,*) "      Alexander Long/hgrie starting November 2023   "
+      write(*,*)
+      
+      if (verbosity.eq.1000) continue
+      end
+c     
+ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 c     hgrie Oct 2022: v2.0 fewbody-Compton
 c     new Aug 2020, based on 3He density codes with the following datings/changes:
-      subroutine Calc2Bspinisospintrans(Comp2Bxx,Comp2Bxy,
-     &     Comp2Byx,Comp2Byy,
-     &     Comp2Bx,Comp2By,
-     &     Comp2Bpx,Comp2Bpy,
+      subroutine Calc2Bspinisospintrans(Kernel2B,
+c     &     Comp2Bx,Comp2By,Comp2Bpx,Comp2Bpy, ! for STUMP, see below
+     &     extQnumlimit,
      &     t12,mt12,t12p,mt12p,l12,s12,
      &     l12p,s12p,thetacm,k,px,py,pz,ppx,ppy,ppz,calctype,verbosity)
 ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
@@ -74,14 +101,11 @@ c
       include '../common-densities/params.def'
       include '../common-densities/calctype.def'
       
-      complex*16,intent(out) :: Comp2Bxx(0:1,-1:1,0:1,-1:1)
-      complex*16,intent(out) :: Comp2Bxy(0:1,-1:1,0:1,-1:1)
-      complex*16,intent(out) :: Comp2Byx(0:1,-1:1,0:1,-1:1)
-      complex*16,intent(out) :: Comp2Byy(0:1,-1:1,0:1,-1:1)
-      complex*16,intent(out) :: Comp2Bx(0:1,-1:1,0:1,-1:1)
-      complex*16,intent(out) :: Comp2By(0:1,-1:1,0:1,-1:1)
-      complex*16,intent(out) :: Comp2Bpx(0:1,-1:1,0:1,-1:1)
-      complex*16,intent(out) :: Comp2Bpy(0:1,-1:1,0:1,-1:1)
+      complex*16,intent(out) :: Kernel2B(1:extQnumlimit,0:1,-1:1,0:1,-1:1) ! was Comp2Bxx/xy/yx/yy
+c      complex*16,intent(out) :: Comp2Bx(0:1,-1:1,0:1,-1:1) ! for STUMP, see below
+c      complex*16,intent(out) :: Comp2By(0:1,-1:1,0:1,-1:1) ! for STUMP, see below
+c      complex*16,intent(out) :: Comp2Bpx(0:1,-1:1,0:1,-1:1) ! for STUMP, see below
+c      complex*16,intent(out) :: Comp2Bpy(0:1,-1:1,0:1,-1:1) ! for STUMP, see below
 c     
 ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 c     Note that Comp2Bab computes the amplitude for polarization a->polarization b
@@ -92,6 +116,7 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 c     
       integer,intent(in) :: calctype
       real*8,intent(in)  :: thetacm,k
+      integer,intent(in) :: extQnumlimit
       integer,intent(in) :: t12,mt12,t12p,mt12p,l12,l12p,s12,s12p
       real*8,intent(in)  :: px,py,pz,ppx,ppy,ppz
                
@@ -134,14 +159,11 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 c     
 c     First a little initialization:
 c     
-      Comp2Bxx=c0
-      Comp2Bxy=c0
-      Comp2Byx=c0
-      Comp2Byy=c0
-      Comp2Bx=c0
-      Comp2By=c0
-      Comp2Bpx=c0
-      Comp2Bpy=c0
+      Kernel2B=c0
+c      Comp2Bx=c0 ! for STUMP, see below
+c      Comp2By=c0 ! for STUMP, see below
+c      Comp2Bpx=c0 ! for STUMP, see below
+c      Comp2Bpy=c0 ! for STUMP, see below
       dl12by2=(l12-l12p)/2.d0   !to check if l12-l12p is  even or odd
 c     
 c     Calculate momenta q,q',q':
@@ -152,10 +174,14 @@ c
      &     qsq,qpsq,qppsq,qpppsq,q12sq,qp12sq,qpp12sq,qppp12sq,px,py,pz,
      &     ppx,ppy,ppz,
      &     k,thetacm,verbosity)
-ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-c     OQ3 MEC contributions
 cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+c     Odelta0 2N contributions: NONE
+c     <if they were nonzero, enter diagrams here>
+      if (calctype.eq.Odelta0) return
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+c     Odelta2 2N contributions
 cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 c      
       factorA=  -(-1)**(t12)*(1.d0/((px-ppx)**2+(py-ppy)**2+(pz-ppz+k/2)**2))*(2*Pi)**3/HC
@@ -168,31 +194,51 @@ c     antisymmetric part: turns out to be the same, only the vaue of t12 will be
       if ((t12 .eq. t12p) .and. (mt12 .eq. 0) .and.(mt12p .eq. 0)) then
          if (s12p .eq. s12) then ! s12-s12p=0 => l12-l12p is even; spin symmetric part only
 
-            call CalcCompton2BA(Comp2Bxx,Comp2Byx,Comp2Bxy,Comp2Byy,
+            call CalcKernel2BAsym(Kernel2B,
      &           factorA,
-     &           s12p,s12,verbosity)
-            call CalcCompton2BB(Comp2Bxx,Comp2Byx,Comp2Bxy,Comp2Byy,
+     &           s12p,s12,extQnumlimit,verbosity)
+            call CalcKernel2BBsym(Kernel2B,
      &           factorB,
      &           px-ppx,py-ppy,pz-ppz-k/2, ! preceding is vector dotted with σ
      &           px-ppx,py-ppy,pz-ppz, ! preceding is vector dotted with ε
-     &           s12p,s12,verbosity)
+     &           s12p,s12,extQnumlimit,verbosity)
 c     
          else                   ! s12 question: s12-s12p=±1 => l12-l12p is odd; spin anti-symmetric part only
 c     
-            call CalcCompton2BAasy(Comp2Bxx,Comp2Byx,Comp2Bxy,Comp2Byy,
+            call CalcKernel2BAasy(Kernel2B,
      &           factorAasy,
-     &           s12p,s12,verbosity)
-            call CalcCompton2BBasy(Comp2Bxx,Comp2Byx,Comp2Bxy,Comp2Byy,
+     &           s12p,s12,extQnumlimit,verbosity)
+            call CalcKernel2BBasy(Kernel2B,
      &           factorBasy,
      &           px-ppx,py-ppy,pz-ppz-k/2, ! preceding is vector dotted with σ
      &           px-ppx,py-ppy,pz-ppz, ! preceding is vector dotted with ε
-     &           s12p,s12,verbosity)
+     &           s12p,s12,extQnumlimit,verbosity)
 
          end if                 ! s12 question
       else                      ! t12!=t12p
          continue
 c     diagrams (A/B) have no components with t12!=t12p. 
       end if                    !t12 question
-
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+c     end Odelta2 2N contributions
+      if (calctype.eq.Odelta2) return
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+c     Odelta3 2N contributions: NONE
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+c     <if they were nonzero, enter diagrams here>
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+c     end Odelta3 2N contributions
+      if (calctype.eq.Odelta3) return
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+c     Odelta4 2N contributions: NONE
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+c     <if they were nonzero, enter diagrams here>
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+c     end Odelta2 2N contributions
+      if (calctype.eq.Odelta4) return
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+c      
       if (verbosity.eq.1000) continue
       end

@@ -2,10 +2,10 @@ c hgrie Oct 2022: v2.0 fewbody-Compton
 c     ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 c     hgrie 17 Nov 2023: split the following subroutines into new file spinstructures.f and renamed two for more intuitive names:
 
-c         singlesigma
-c         Calchold => doublesigma
-c         singlesigmaasy
-c         Calcholdasy => doublesigmaasy
+c         singlesigma     => singlesigmasym
+c         Calchold        => doublesigmasym
+c         singlesigmaasy  => singlesigmaasy
+c         Calcholdasy     => doublesigmaasy
 c      
 c     This way, spintricks*f only contains individual diagram
 c     contributions and not these routines which are generally relevant for spin structures.
@@ -36,8 +36,8 @@ c     So this is the first mistake we find in that part.
 
 ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 c     contains:
-c         doublesigma
-c         singlesigma
+c         doublesigmasym
+c         singlesigmasym
 c         doublesigmaasy
 c         singlesigmaasy
 c              
@@ -45,9 +45,9 @@ c
 c
 c====================================================================
 c
-      subroutine doublesigma(hold,Ax,Ay,Az,Bx,By,Bz,factor,Sp,S,verbosity)
+      subroutine doublesigmasym(hold,Ax,Ay,Az,Bx,By,Bz,Sp,S,verbosity)
 c     
-c     Calculates symmetric part of spin structure sig.A sig.B.
+c     Calculates symmetric part of spin structure σ1.A σ2.B: σ1.A σ2.B + σ1.B σ2.A
 c     
 c********************************************************************
 c     
@@ -67,11 +67,10 @@ c********************************************************************
 c     
 c     INPUT VARIABLES:
 c     
-      real*8 Ax,Ay,Az,Bx,By,Bz,factor,AdotB
+      real*8 Ax,Ay,Az,Bx,By,Bz,AdotB
       integer verbosity
       integer Sp,S
 c     
-c     factor-overall factor
 c     Sp,S-final- and initial-state spin
 c     
 c********************************************************************
@@ -87,7 +86,7 @@ c
       AdotB=Ax*Bx+Ay*By+Az*Bz
       
       if ((Sp .eq. 0) .and. (S .eq. 0)) then
-         hold(0,0,0,0)=-factor*2.d0*AdotB
+         hold(0,0,0,0)=-2.d0*AdotB
       else if ((Sp .eq. 1) .and. (S .eq. 1)) then
          
          Aplus=-(Ax+ci*Ay)/(dsqrt(2.d0))
@@ -95,13 +94,13 @@ c
          Bplus=-(Bx+ci*By)/(dsqrt(2.d0))
          Bminus=(Bx-ci*By)/(dsqrt(2.d0))
          
-         hold(1,1,1,1)=factor*(2.d0*Az*Bz)
-         hold(1,0,1,1)=-factor*2.d0*(Az*Bplus+Aplus*Bz)
-         hold(1,-1,1,1)=factor*4.d0*Aplus*Bplus
-         hold(1,1,1,0)=factor*2.d0*(Aminus*Bz+Az*Bminus)
-         hold(1,0,1,0)=-2.d0*factor*(Aplus*Bminus+Aminus*Bplus+Az*Bz)
+         hold(1,1,1,1)=(2.d0*Az*Bz)
+         hold(1,0,1,1)=-2.d0*(Az*Bplus+Aplus*Bz)
+         hold(1,-1,1,1)=4.d0*Aplus*Bplus
+         hold(1,1,1,0)=2.d0*(Aminus*Bz+Az*Bminus)
+         hold(1,0,1,0)=-2.d0*(Aplus*Bminus+Aminus*Bplus+Az*Bz)
          hold(1,-1,1,0)=-hold(1,0,1,1)
-         hold(1,1,1,-1)=factor*4.d0*Aminus*Bminus
+         hold(1,1,1,-1)=4.d0*Aminus*Bminus
          hold(1,0,1,-1)=-hold(1,1,1,0)
          hold(1,-1,1,-1)=hold(1,1,1,1)
       end if
@@ -109,10 +108,10 @@ c
       end
 c
 cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc      
-cccc  new subroutine to calculate the matrix elements of factor*A.σ 
-      subroutine singlesigma(hold,Ax,Ay,Az,factor,Sp,S,verbosity)
+cccc  new subroutine to calculate the matrix elements of A.σ 
+      subroutine singlesigmasym(hold,Ax,Ay,Az,Sp,S,verbosity)
 c     
-c     calculates (σ1+σ2).A -- checked in manu-script Compton Densities pp. 65aff
+c     Calculates symmetric part of spin structure σ.A: (σ1+σ2).A -- checked in manu-script Compton Densities pp. 65aff
 c     
 c********************************************************************
 c     
@@ -132,11 +131,10 @@ c********************************************************************
 c     
 c     INPUT VARIABLES:
 c     
-      real*8 Ax,Ay,Az,factor
+      real*8 Ax,Ay,Az
       integer verbosity
       integer Sp,S
 c     
-c     factor-overall factor
 c     Sp,S-final- and initial-state spin
 c     
 c********************************************************************
@@ -155,13 +153,13 @@ c
          Aplus=-(Ax+ci*Ay)/(dsqrt(2.d0))
          Aminus=(Ax-ci*Ay)/(dsqrt(2.d0))
          
-         hold(1, 1,1, 1) =  factor*2.d0*Az
+         hold(1, 1,1, 1) =  2.d0*Az
 c     hgrie 25 Sep 2023: following contains added MINUS sign as described at top of file
          hold(1,-1,1,-1) = -hold(1,1,1,1)
-         hold(1, 0,1, 1) = -factor*2.d0*Aplus
-         hold(1, 1,1, 0) =  factor*2.d0*Aminus   
-         hold(1,-1,1, 0) = -factor*2.d0*Aplus !check: is -CONJG(hold(1,1,1,0))
-         hold(1, 0,1,-1) =  factor*2.d0*Aminus
+         hold(1, 0,1, 1) = -2.d0*Aplus
+         hold(1, 1,1, 0) =  2.d0*Aminus   
+         hold(1,-1,1, 0) = -2.d0*Aplus !check: is -CONJG(hold(1,1,1,0))
+         hold(1, 0,1,-1) =  2.d0*Aminus
       end if
       
       if (verbosity.eq.1000) continue
@@ -171,9 +169,9 @@ c
 c====================================================================
 c====================================================================
 c
-      subroutine doublesigmaasy(hold,Ax,Ay,Az,Bx,By,Bz,factor,Sp,S,verbosity)   
+      subroutine doublesigmaasy(hold,Ax,Ay,Az,Bx,By,Bz,Sp,S,verbosity)   
 c     
-c     Calculates anti-symmetric part of spin structure σ1.A σ2.B.
+c     Calculates anti-symmetric part of spin structure σ1.A σ2.B: σ1.A σ2.B - σ1.B σ2.A
 c     
 c********************************************************************
 c     
@@ -192,11 +190,10 @@ c********************************************************************
 c     
 c     INPUT VARIABLES:
 c     
-      real*8 Ax,Ay,Az,Bx,By,Bz,factor
+      real*8 Ax,Ay,Az,Bx,By,Bz
       integer Sp,S
       integer verbosity
 c
-c     factor-overall factor
 c     Sp,S-final- and initial-state spin
 c     
 c********************************************************************
@@ -212,13 +209,13 @@ c
       Bplus=-(Bx+ci*By)/(dsqrt(2.d0))
       Bminus=(Bx-ci*By)/(dsqrt(2.d0))
       if ((Sp .eq. 0) .and. (S .eq. 1)) then
-         hold(0,0,1,1)=factor*2.d0*(-Aplus*Bz+Az*Bplus)
-         hold(0,0,1,0)=-factor*2.d0*(Aplus*Bminus-Aminus*Bplus)
-         hold(0,0,1,-1)=factor*2.d0*(Aminus*Bz-Az*Bminus)
+         hold(0,0,1,1)=2.d0*(-Aplus*Bz+Az*Bplus)
+         hold(0,0,1,0)=-2.d0*(Aplus*Bminus-Aminus*Bplus)
+         hold(0,0,1,-1)=2.d0*(Aminus*Bz-Az*Bminus)
       else if ((Sp .eq. 1) .and. (S .eq. 0)) then
-         hold(1,1,0,0)=factor*2.d0*(Aminus*Bz-Az*Bminus)
-         hold(1,0,0,0)=factor*2.d0*(Aplus*Bminus-Aminus*Bplus)
-         hold(1,-1,0,0)=factor*2.d0*(-Aplus*Bz+Az*Bplus)
+         hold(1,1,0,0)=2.d0*(Aminus*Bz-Az*Bminus)
+         hold(1,0,0,0)=2.d0*(Aplus*Bminus-Aminus*Bplus)
+         hold(1,-1,0,0)=2.d0*(-Aplus*Bz+Az*Bplus)
       end if
       
       if (verbosity.eq.1000) continue
@@ -226,9 +223,9 @@ c
 c
 c********************************************************************
 c********************************************************************
-      subroutine singlesigmaasy(hold,Ax,Ay,Az,factor,Sp,S,verbosity)
+      subroutine singlesigmaasy(hold,Ax,Ay,Az,Sp,S,verbosity)
 c     
-c     calculates (σ1-σ2).A -- checked in manu-script Compton Densities pp. 65aff
+c     Calculates anti-symmetric part of spin structure σ.A: (σ1-σ2).A -- checked in manu-script Compton Densities pp. 65aff
 c     
 c********************************************************************
 c     
@@ -248,7 +245,7 @@ c********************************************************************
 c     
 c     INPUT VARIABLES:
 c     
-      real*8 Ax,Ay,Az,factor
+      real*8 Ax,Ay,Az
       integer verbosity
       integer Sp,S
 c     
@@ -265,13 +262,13 @@ c
       hold=c0
       
       if ((Sp .eq. 0) .and. (S .eq. 1)) then
-         hold(0,0,1,1)=-factor*2.d0*Aplus
-         hold(0,0,1,0)=factor*2.d0*Az
-         hold(0,0,1,-1)=-factor*2.d0*Aminus
+         hold(0,0,1,1)=-2.d0*Aplus
+         hold(0,0,1,0)=2.d0*Az
+         hold(0,0,1,-1)=-2.d0*Aminus
       else if ((Sp .eq. 1) .and. (S .eq. 0)) then
-         hold(1,1,0,0)=-factor*2.d0*Aminus
-         hold(1,0,0,0)=factor*2.d0*Az
-         hold(1,-1,0,0)=-factor*2.d0*Aplus
+         hold(1,1,0,0)=-2.d0*Aminus
+         hold(1,0,0,0)=2.d0*Az
+         hold(1,-1,0,0)=-2.d0*Aplus
       end if
       if (verbosity.eq.1000) continue
       end

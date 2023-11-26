@@ -46,7 +46,6 @@ c     intrinsic variables
 cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc      
       
 c     replace ORDER in _original_ filename by order -- if none such, then just proceed
-      write(*,*) calctype
       if (calctype.eq.Odelta0) then
          orderreplacement = "Odelta0"
       else if (calctype.eq.Odelta2) then

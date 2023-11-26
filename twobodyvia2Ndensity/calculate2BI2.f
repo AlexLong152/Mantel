@@ -1,7 +1,8 @@
 c     hgrie Oct 2022: v2.0 fewbody-Compton
 c     new Aug 2020, based on 3He density codes with the following datings/changes:
-      subroutine Calculate2BIntegralI2(Int2Bxx,Int2Bxy,Int2Byx,Int2Byy,
-     &     Int2Bx,Int2By,Int2Bpx,Int2Bpy,
+      subroutine Calculate2BIntegralI2(Int2B,
+c     &     Int2Bx,Int2By,Int2Bpx,Int2Bpy, ! for STUMP, see below
+     &     extQnumlimit,
      &     j12p,m12p,l12p,s12p,t12p,mt12p,j12,m12,
      &     l12,s12,t12,mt12,p12,p12p,th12,phi12,Nth12,Nphi12,
      &     thetacm,k,
@@ -28,6 +29,7 @@ c
       include '../common-densities/params.def'
       include '../common-densities/calctype.def'
 c     
+      integer,intent(in) :: extQnumlimit
       integer,intent(in) :: m12p,m12,j12p,s12p,l12p,j12,s12,l12,Nth12,Nphi12
       integer,intent(in) :: t12p,t12,mt12p,mt12
       
@@ -42,24 +44,24 @@ c     end add hgrie
       
       real*8,intent(in) :: thetacm,k,th12(Nangmax),phi12(Nangmax)
       
-      complex*16,intent(out) :: Int2Bxx,Int2Bxy,Int2Byx,Int2Byy
-      complex*16,intent(out) :: Int2Bx,Int2By,Int2Bpx,Int2Bpy
+      complex*16,intent(out) :: Int2B(1:extQnumlimit)
       
-      complex*16 Compton2Bxx(0:1,-1:1,0:1,-1:1)
-      complex*16 Compton2Bxy(0:1,-1:1,0:1,-1:1)
-      complex*16 Compton2Byx(0:1,-1:1,0:1,-1:1)
-      complex*16 Compton2Byy(0:1,-1:1,0:1,-1:1)
-      complex*16 Compton2Bx(0:1,-1:1,0:1,-1:1)
-      complex*16 Compton2By(0:1,-1:1,0:1,-1:1)
-      complex*16 Compton2Bpx(0:1,-1:1,0:1,-1:1)
-      complex*16 Compton2Bpy(0:1,-1:1,0:1,-1:1)
-c     
+c      complex*16,intent(out) :: Int2Bx,Int2By,Int2Bpx,Int2Bpy ! for STUMP, see below
+      
+      complex*16 Kernel2B(1:extQnumlimit,0:1,-1:1,0:1,-1:1) ! was Compton2Bxx/xy/yx/yy
+      
+c      complex*16 Compton2Bx(0:1,-1:1,0:1,-1:1)  ! for STUMP, see below
+c      complex*16 Compton2By(0:1,-1:1,0:1,-1:1)  ! for STUMP, see below
+c      complex*16 Compton2Bpx(0:1,-1:1,0:1,-1:1) ! for STUMP, see below
+c      complex*16 Compton2Bpy(0:1,-1:1,0:1,-1:1) ! for STUMP, see below
+     
+      integer extQnum           ! counter of combined external quantum numbers of in and out state
+      
       integer ith,iphi,jth,jphi,msp,ms,ml12p,ml12
       complex*16 Yl12(-5:5),Yl12p(-5:5)
-      complex*16 Intxx(-5:5,-5:5),Intxy(-5:5,-5:5)
-      complex*16     Intyx(-5:5,-5:5),Intyy(-5:5,-5:5)
-      complex*16 Intx(-5:5,-5:5),Inty(-5:5,-5:5)
-      complex*16     Intpx(-5:5,-5:5),Intpy(-5:5,-5:5)
+      complex*16 Int(1:extQnumlimit,-5:5,-5:5)
+c      complex*16 Intx(-5:5,-5:5),Inty(-5:5,-5:5)   ! for STUMP, see below
+c      complex*16 Intpx(-5:5,-5:5),Intpy(-5:5,-5:5) ! for STUMP, see below
       complex*16 Yl12pstar
       real*8 cgcp,cgc,p12x,p12y,p12z,p12px,p12py,p12pz,p12,p12p
 c     
@@ -68,25 +70,20 @@ c
       if ((l12p .gt. 5) .or. (l12 .gt. 5)) then
          goto 100
       endif 
-      Int2Bxx=c0
-      Int2Bxy=c0
-      Int2Byx=c0
-      Int2Byy=c0
-      Compton2Bxx=c0
-      Compton2Bxy=c0
-      Compton2Byx=c0
-      Compton2Byy=c0
-      Int2Bx=c0
-      Int2By=c0
-      Int2Bpx=c0
-      Int2Bpy=c0
-      Compton2Bx=c0
-      Compton2By=c0
-      Compton2Bpx=c0
-      Compton2Bpy=c0
-c     
-      call initclebsch                !Initializing the factorial array
-c     Loop  to sum over ms12 and ms12p (called ms and msp here). 
+      Int2B=c0
+      Kernel2B=c0
+      
+c      Int2Bx=c0      ! for STUMP, see below
+c      Int2By=c0      ! for STUMP, see below
+c      Int2Bpx=c0     ! for STUMP, see below
+c      Int2Bpy=c0     ! for STUMP, see below
+c      Compton2Bx=c0  ! for STUMP, see below
+c      Compton2By=c0  ! for STUMP, see below
+c      Compton2Bpx=c0 ! for STUMP, see below
+c      Compton2Bpy=c0 ! for STUMP, see below
+     
+      call initclebsch                ! Initializing the factorial array
+c     Loop  to sum over the spin projections of the (12) system: ms12 and ms12p (called ms and msp here). 
 c     The value of ms and msp together with m12 & m12p determine ml12 and ml12p. 
       do msp=-s12p,s12p,1
          ml12p=m12p-msp
@@ -98,15 +95,13 @@ c     Initializing to zero
             Yl12=c0
             Yl12p=c0
             Yl12pstar=c0
-            Intxx=c0
-            Intxy=c0
-            Intyx=c0
-            Intyy=c0
-            Intx=c0
-            Inty=c0
-            Intpx=c0
-            Intpy=c0
-            if ((abs(ml12p) .le. l12p) .and. (abs(ml12) .le. l12)) then
+            Int=c0
+c            Intx=c0  ! for STUMP, see below
+c            Inty=c0  ! for STUMP, see below
+c            Intpx=c0  ! for STUMP, see below
+c            Intpy=c0  ! for STUMP, see below
+            if ((abs(ml12p) .le. l12p) .and. (abs(ml12) .le. l12)) then     
+c     angle integral: θ of p12
                do ith=1,Nth12
 c     c   $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
 c     hgrie 20 June 2014: pick theta& phi summation parameters following AngularType12
@@ -120,12 +115,13 @@ c     for LebedevLaikov, only sum over diagonal elements of angweight12 (all oth
                   else
                      write(*,*) "*** ERROR: Something went wrong with imin/imax in Calculate2BI2. -- Exiting."
                      stop
-                  end if
-c     c   $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
+                  end if    
+c     angle integral: φ of p12
                   do iphi=imin,imax
                      call calculatepvector(p12x,p12y,p12z,p12,
      &                    th12(ith),phi12(iphi),verbosity)
                      call getsphericalharmonics(Yl12,l12,th12(ith),phi12(iphi))
+c     angle integral: θprime of p12p
                      do jth=1,Nth12
 c     c   $$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$$
 c     hgrie 20 June 2014: pick theta& phi summation parameters following AngularType12
@@ -139,58 +135,65 @@ c     for LebedevLaikov, only sum over diagonal elements of angweight12 (all oth
                         else
                            write(*,*) "*** ERROR: Something went wrong with imin/imax in Calculate2BI2. -- Exiting."
                            stop
-                        end if
+                        end if    
+c     angle integral: φprime of p12p
                         do jphi=jmin,jmax
                            call calculatepvector(p12px,p12py,p12pz,p12p,
      &                          th12(jth),phi12(jphi),verbosity)
                            call getsphericalharmonics(Yl12p,l12p,th12(jth),phi12(jphi))
                            Yl12pstar=Real(Yl12p(ml12p))-ci*Imag(Yl12p(ml12p))
-                           call Calc2Bspinisospintrans(Compton2Bxx,Compton2Bxy,
-     &                          Compton2Byx,Compton2Byy,
-     &                          Compton2Bx,Compton2By,
-     &                          Compton2Bpx,Compton2Bpy,
+                           call Calc2Bspinisospintrans(Kernel2B,
+c     &                          Compton2Bx,Compton2By,Compton2Bpx,Compton2Bpy, ! for STUMP, see below
+     &                          extQnumlimit,
      &                          t12,mt12,t12p,mt12p,l12,
      &                          s12,l12p,s12p,thetacm,k,p12x,p12y,p12z,
      &                          p12px,p12py,p12pz,calctype,verbosity)
-                           Intxx(ml12p,ml12)=Intxx(ml12p,ml12)+Yl12pstar*Yl12(ml12)*
-     &                          angweight12(ith,iphi)*angweight12(jth,jphi)*
-     &                          Compton2Bxx(s12p,msp,s12,ms)
-                           Intxy(ml12p,ml12)=Intxy(ml12p,ml12)+Yl12pstar*Yl12(ml12)*
-     &                          angweight12(ith,iphi)*angweight12(jth,jphi)*
-     &                          Compton2Bxy(s12p,msp,s12,ms)
-                           Intyx(ml12p,ml12)=Intyx(ml12p,ml12)+Yl12pstar*Yl12(ml12)*
-     &                          angweight12(ith,iphi)*angweight12(jth,jphi)*
-     &                          Compton2Byx(s12p,msp,s12,ms)
-                           Intyy(ml12p,ml12)=Intyy(ml12p,ml12)+Yl12pstar*Yl12(ml12)*
-     &                          angweight12(ith,iphi)*angweight12(jth,jphi)*
-     &                          Compton2Byy(s12p,msp,s12,ms)
-                           Intx(ml12p,ml12)=Intx(ml12p,ml12)+Yl12pstar*Yl12(ml12)*
-     &                          angweight12(ith,iphi)*angweight12(jth,jphi)*
-     &                          Compton2Bx(s12p,msp,s12,ms)
-                           Inty(ml12p,ml12)=Inty(ml12p,ml12)+Yl12pstar*Yl12(ml12)*
-     &                          angweight12(ith,iphi)*angweight12(jth,jphi)*
-     &                          Compton2By(s12p,msp,s12,ms)
-                           Intpx(ml12p,ml12)=Intpx(ml12p,ml12)+Yl12pstar*Yl12(ml12)*
-     &                          angweight12(ith,iphi)*angweight12(jth,jphi)*
-     &                          Compton2Bpx(s12p,msp,s12,ms)
-                           Intpy(ml12p,ml12)=Intpy(ml12p,ml12)+Yl12pstar*Yl12(ml12)*
-     &                          angweight12(ith,iphi)*angweight12(jth,jphi)*
-     &                          Compton2Bpy(s12p,msp,s12,ms)
+                           
+                           do extQnum=1,extQnumlimit
+                              Int(extQnum,ml12p,ml12) = Int(extQnum,ml12p,ml12) + Yl12pstar*Yl12(ml12)*
+     &                             angweight12(ith,iphi)*angweight12(jth,jphi)*Kernel2B(extQnum,s12p,msp,s12,ms)
+                           end do   
+ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+c     hgrie Nov 2023: Following is a STUMP from the Compton code, used there only for OQ4 -- NOT YET IMPLEMENTED !!!!!!!!!!!!!!!!!!!!!!!!!!!!
+c     I leave this here because maybe some of this can be recycled later for boost corrections or so?
+c                           Intx(ml12p,ml12)=Intx(ml12p,ml12)+Yl12pstar*Yl12(ml12)*
+c     &                          angweight12(ith,iphi)*angweight12(jth,jphi)*
+c     &                          Compton2Bx(s12p,msp,s12,ms)
+c                           Inty(ml12p,ml12)=Inty(ml12p,ml12)+Yl12pstar*Yl12(ml12)*
+c     &                          angweight12(ith,iphi)*angweight12(jth,jphi)*
+c     &                          Compton2By(s12p,msp,s12,ms)
+c                           Intpx(ml12p,ml12)=Intpx(ml12p,ml12)+Yl12pstar*Yl12(ml12)*
+c     &                          angweight12(ith,iphi)*angweight12(jth,jphi)*
+c     &                          Compton2Bpx(s12p,msp,s12,ms)
+c                           Intpy(ml12p,ml12)=Intpy(ml12p,ml12)+Yl12pstar*Yl12(ml12)*
+c     &                          angweight12(ith,iphi)*angweight12(jth,jphi)*
+c     &                          Compton2Bpy(s12p,msp,s12,ms)
+c     END OF STUMP    
+ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc  
                         end do  ! jphi
                      end do     ! jth
                   end do        ! iphi
                end do           ! ith
             end if
-            cgcp=CG(2*l12p,2*s12p,2*j12p,2*ml12p,2*msp,2*m12p)
+c     Clebsches for unprimed and primed quantum numbers
             cgc=CG(2*l12,2*s12,2*j12,2*ml12,2*ms,2*m12)
-            Int2Bxx=Int2Bxx+Intxx(ml12p,ml12)*cgc*cgcp
-            Int2Bxy=Int2Bxy+Intxy(ml12p,ml12)*cgc*cgcp
-            Int2Byx=Int2Byx+Intyx(ml12p,ml12)*cgc*cgcp
-            Int2Byy=Int2Byy+Intyy(ml12p,ml12)*cgc*cgcp
-            Int2Bx=Int2Bx+Intx(ml12p,ml12)*cgc*cgcp
-            Int2By=Int2By+Inty(ml12p,ml12)*cgc*cgcp
-            Int2Bpx=Int2Bpx+Intpx(ml12p,ml12)*cgc*cgcp
-            Int2Bpy=Int2Bpy+Intpy(ml12p,ml12)*cgc*cgcp
+            cgcp=CG(2*l12p,2*s12p,2*j12p,2*ml12p,2*msp,2*m12p)
+ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc            
+c     hgrie Nov 2023: Following is a STUMP from the Compton code, used there only for OQ4 -- NOT YET IMPLEMENTED !!!!!!!!!!!!!!!!!!!!!!!!!!!!
+c     I leave this here because maybe some of this can be recycled later for boost corrections or so?
+c            Int2Bxx=Int2Bxx+Intxx(ml12p,ml12)*cgc*cgcp
+c            Int2Bxy=Int2Bxy+Intxy(ml12p,ml12)*cgc*cgcp
+c            Int2Byx=Int2Byx+Intyx(ml12p,ml12)*cgc*cgcp
+c            Int2Byy=Int2Byy+Intyy(ml12p,ml12)*cgc*cgcp
+c            Int2Bx=Int2Bx+Intx(ml12p,ml12)*cgc*cgcp
+c            Int2By=Int2By+Inty(ml12p,ml12)*cgc*cgcp
+c            Int2Bpx=Int2Bpx+Intpx(ml12p,ml12)*cgc*cgcp
+c            Int2Bpy=Int2Bpy+Intpy(ml12p,ml12)*cgc*cgcp
+c     END OF STUMP    
+ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+            do extQnum=1,extQnumlimit
+               Int2B(extQnum) = Int2B(extQnum) + Int(extQnum,ml12p,ml12)*cgc*cgcp
+            end do
          end do                 !ms12
       end do                    !ms12p
       if (verbosity.eq.1000) continue

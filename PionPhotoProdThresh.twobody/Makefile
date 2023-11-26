@@ -1,6 +1,6 @@
+
 SHELL=/bin/sh
 #	hgrie May 2018: rewritten for hdf5 and parallel processing (mpi)
-#
 # This makefile is used as follows ([option] last):
 # make -f makefile		-> compile with FFLAGS (usually non-optimized)
 # make -f makefile global	-> compile with O3FFLAGS (optimized)
@@ -42,40 +42,45 @@ SHELL=/bin/sh
 #   This makefile is a modified version of the standard makefile.
 #   Options void, clean, and clobber which appear in the usual makefile 
 # have been removed here.
-#
+
 # OBJS defined below, modify as needed.  OBJS are the source files (.f)
 # with .f -> .o .   Directories are relative to make directory.
-OBJS= \
-calcAmpVars.o \
-calculateAs.OQ3poles.o \
-calculateAs.OQ3nopoles.o \
-calculateAs.Delta.o \
-main.onebodyvia1Ndensity.o \
-construct1NAmps.o \
-read1Ndensity.o \
-trafo1Namps-to-helicity.o \
+OBJS=\
+readinput.twobody.PionPhotoProdThresh.o \
+2Bkernel.PionPhotoProdThresh.o \
+2Bspinsym.PionPhotoProdThresh.o \
+2Bspinasy.PionPhotoProdThresh.o \
+usesymmetries.PionPhotoProdThresh.o \
+../twobodyvia2Ndensity/calculate2BI2.o \
+../twobodyvia2Ndensity/finalstatesums.twobodyvia2Ndensity.o \
+../twobodyvia2Ndensity/LebedevLaikov.o \
+../twobodyvia2Ndensity/main.twobodyvia2Ndensity.o \
+../twobodyvia2Ndensity/read2Ndensity.o \
+../twobodyvia2Ndensity/setquads.o \
+../twobodyvia2Ndensity/spinstructures.o \
+../common-densities/andreasquads.o \
+../common-densities/calcmomenta.o \
 ../common-densities/gauleg.o \
+../common-densities/getylm.o \
 ../common-densities/gridGauleg.o \
 ../common-densities/makedensityfilename.o \
 ../common-densities/makeoutputfilename.o \
 ../common-densities/outputtomath.o \
 ../common-densities/photonmomenta.o \
 ../common-densities/readinput-densities.o \
-../common-densities/transcarttospher-densities.o \
-../common-densities/usesymmetry+writeoutput-densities.o 
+../common-densities/outputroutine.o 
+
+#../twobody/calculate2BI2.o \
 
 # Source files (.f) = Object files (.o) with .o -> .f
 SRCS = $(OBJS:.o=.f)
 
 # objects, source files and directory to deal with .mod files 
 MODS =
-#\
 
 MODSRC = $(MODS:.o=.f)
 
-MODDIR = ../common-densities/
-
-
+MODDIR = ../common-densities/density-modules/
 
 # Include files as generated with findincl option and modified as needed;
 # any directory reference should be relative to make directory, not the
@@ -101,18 +106,18 @@ INPUTS=
 # LIBS		A list of libraries 
 # COMMAND	Name of the executable
 #
-CFT= mpif90
+CFT=  mpif90
 #FFLAGS=  -static -O -g -C -extend_source
 #O3FFLAGS=  -static -O3 -extend_source
 # FFLAGS and O3FLAGS input via include.  File .FFLAGS is machine dependent.
 #include .FFLAGS
 #include $(HOME)/.FFLAGS
-#Wtabs option diregards nonconforming tab character warning, which clogs
-#up compiler -Wall feedback
-#  -ffpe-summary=none suppresses "The following floating-point exceptions are signalling:"
+# Ensure that .mod files are FIRST read from dir common-densities/density-modules/,
+# and then from common-densities/. Necessary since CompDens needs newer version of
+#	spline.f than the onebody and twobody parts of the code....
 # hgrie May 2019: included new flag -mcmodel=large to allow for larger arrays
-FFLAGS= -O -g -c -Wall -Wno-tabs -ffixed-line-length-132 \
-	-ffpe-summary=none -mcmodel=large \
+FFLAGS= -O -fopenmp -g -c -Wall -Wno-tabs -ffixed-line-length-132  \
+	-ffpe-summary=none  -mcmodel=large \
 	-I../common-densities/density-modules -I../common-densities -I /usr/include/hdf5/openmpi/
 
 # library for density
@@ -127,17 +132,19 @@ FFLAGS= -O -g -c -Wall -Wno-tabs -ffixed-line-length-132 \
 
 LDFLAGS= $(LIBSTD1) $(LIBSTD2) $(LIBSTD3) $(LIBSTD4) $(LIBSTD5) $(LIBSTD6) $(LIBSTD7) $(LIBSTD8)
 LIBS=  
-COMMAND= onebodyvia1Ndensity
+COMMAND= twobodyvia2Ndensity.PionPhotoProdThresh
 
 #
 # Lines from here on are the actual rules that make uses to build $(COMMAND).
 # Definition of command must precede include dependencies!
 
 all: $(MODS) MODFILES $(COMMAND)
+
 #Compile the module files separately, tell the Makefile where to find them
 #
+#
 #MODFILES: $(MODS)
-#	$(CFT) -I$(MODDIR) -c $(MODSRC)
+#	gfortran -I$(MODDIR) -c $(MODSRC)
 
 $(COMMAND):	$(OBJS)
 	$(CFT) -o $(COMMAND) $(OBJS) $(MODS) $(LDFLAGS) $(LIBS) 
@@ -148,6 +155,10 @@ $(COMMAND):	$(OBJS)
 # Can be generated via showincl option; the directory of include file
 # must be relative to make directory (check it).  May need to break long 
 # lines with \ .
+
+#main.o readinput.o setquads.o: params.def
+#main.o readinput.o : calctype.def
+#main.o setquads.o calcmomenta.o calcmatrix.o polnamplitudes.o: constants.def
 
 #
 #
@@ -204,10 +215,9 @@ showincl: $(INCS:.def=.de) $(INCS:.inc=.in)
 	@ echo `grep -l $(@F) $(SRCS) | sed "s/\\.f/.o/"` : \
 	  $@ | sed "s/\.in/\.inc/" | sed "s/\.de/\.def/"
  
-# added by hgrie: clean up, delete .mod files in common-densities and onebody
+# added by hgrie: clean up, delete .mod files in common-densities and twobody
 
 clean:
-#	rm *.o *.mod $(OBJS) $(COMMAND) $(MODS) $(MODDIR)/*.mod
+#	rm *.mod *.o $(OBJS) $(COMMAND) $(MODS) $(MODDIR)/*.mod
 	rm *.mod *.o $(OBJS) $(COMMAND)
-
 
