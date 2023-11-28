@@ -1,12 +1,26 @@
-c     hgrie Oct 2022: v2.0 fewbody-Compton
-c     hgrie Aug 2020: produce mathematica-friendly output to stdout of the first 2(2S+1)² MEs.
-c     These are not related by time-reversal symmetry.
-c     Also includes useful sub-subroutines for that.
-cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+c     Part of MANTLE code for One/Twobody Contributions to Few-Nucleon Processes Calculated Via 1N/2N-Density Matrix
+c     NEW Nov 2023: v1.0 Alexander Long/hgrie 
+c               Based on Compton density code v2.0: D. Phillips/A. Nogga/hgrie starting August 2020/hgrie Oct 2022
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+c     CONTAINS SUBROUTINES:
+c              outputtomath         : output to stdout in mathematica-frendly format
+c              ConvertRealToMath    : convert a string which used to be a Fortran Real into a mathematica-readable string
+c              ConvertComplexToMath : convert a string which used to be a Fortran Complex into a mathematica-readable string
+c              StripSpaces          : strip spaces from string
+c      
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+c     TO DO:
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 c     CHANGES:
-c     hgrie Aug 2020: new
+c     v1.0 Nov 2023: New, identical to file of same name in common-densities/ of Compton density code v2.0 hgrie Oct 2022
+c           New documentation -- kept only documentation of changes in Compton if relevant/enlightening for this code. 
+c           No back-compatibility 
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+c     COMMENTS:
 c
-cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
       subroutine outputtomath(Result,twoSnucl,extQnumlimit,verbosity)
 c**********************************************************************
       IMPLICIT NONE
@@ -56,10 +70,12 @@ c output ALL amplitudes when symmetry NOT invoked
       return
       
       end
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+      subroutine ConvertRealToMath(string)
 cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 c     convert a string which used to be a Fortran Real into a mathematica-readable string,
 c     e.g. 1.2345E003 => 1.2345*10*(003)
-      subroutine ConvertRealToMath(string)
       character(len=*),intent(inout) :: string
       if ( index(string,"E").ne.0 ) then
          string = trim(string(1:index(string,"E")-1) // '*10^(' // string(index(string,"E")+1:)) // ')'
@@ -70,10 +86,12 @@ c     e.g. 1.2345E003 => 1.2345*10*(003)
       call StripSpaces(string)
       end ! subroutine ConvertRealToMath
 
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+      subroutine ConvertComplexToMath(string)
 cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 c     convert a string which used to be a Frortran Compex into a mathematica-readable string,
 c     e.g. (1.2E3,3.4E3) => 1.2*10^3+3.4*10^3*I
-      subroutine ConvertComplexToMath(string)
       character(len=*),intent(inout) :: string
       character(len=30) :: restring,imstring
       write(restring,*) trim(adjustl(string(index(string,"(")+1:index(string,",")-1)))
@@ -84,8 +102,10 @@ c     e.g. (1.2E3,3.4E3) => 1.2*10^3+3.4*10^3*I
       call StripSpaces(string)
       end ! subroutine ConvertComplexToMath
       
-cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc      
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
       subroutine StripSpaces(string)
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc      
       character(len=*),intent(inout) :: string
       integer :: stringLen 
       integer :: last, actual

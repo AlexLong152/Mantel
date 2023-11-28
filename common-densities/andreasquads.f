@@ -1,9 +1,30 @@
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+c     Part of MANTLE code for One/Twobody Contributions to Few-Nucleon Processes Calculated Via 1N/2N-Density Matrix
+c     NEW Nov 2023: v1.0 Alexander Long/hgrie 
+c               Based on Compton density code v2.0: D. Phillips/A. Nogga/hgrie starting August 2020/hgrie Oct 2022
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+c     CONTAINS SUBROUTINES:
+c              gausleg :
+c              trns    : populates fields xp and ap with ransformed Gauss-Legendre points and weights
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+c     TO DO:
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+c     CHANGES:
+c     v1.0 Nov 2023: New, identical to file of same name in common-densities/ of Compton density code v2.0 hgrie Oct 2022
+c           New documentation -- kept only documentation of changes in Compton if relevant/enlightening for this code. 
+c           No back-compatibility 
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+c     COMMENTS:
+c
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
       SUBROUTINE gausleg(N,x1,x2,X,W)
       IMPLICIT NONE
       INTEGER N        
       REAL(8) x1,x2,X(N),W(N)
       REAL(8) z1,z,xm,xl,pp,p3,p2,p1,pi,tol
       INTEGER m,i,j
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
       pi=acos(-1.0)
       tol=100.0*1.E-10
       m=(n+1)/2
@@ -32,6 +53,8 @@
          W(n+1-i) = W(i)
  10   CONTINUE
       END SUBROUTINE
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
       SUBROUTINE TRNS(NP1,NP2,NP,P1,P2,P3,XP,AP)
       IMPLICIT REAL(8)(a-h,o-z)
       IMPLICIT INTEGER(i-n)
@@ -59,6 +82,7 @@ C     NP = NP1 + NP2
 C     
       DIMENSION XP1(1000),AP1(1000),XP2(1000),AP2(1000)
       DIMENSION XP(NP),AP(NP)
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
       
       IF(NP1.GT.1000) STOP 'NP1 in TRNS'
       IF(NP2.GT.1000) STOP 'NP2 in TRNS'

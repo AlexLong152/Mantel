@@ -1,5 +1,25 @@
-c     hgrie Oct 2022: v2.0 fewbody-Compton
-c     new Aug 2020, based on 3He density codes with the following datings/changes:
+ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+c     Part of MANTLE code for Twobody Contributions to Few-Nucleon Processes Calculated Via 2N-Density Matrix
+c     NEW Nov 2023: v1.0 Alexander Long/hgrie 
+c               Based on Compton density code v2.0: D. Phillips/A. Nogga/hgrie starting August 2020/hgrie Oct 2022
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+c     CONTAINS SUBROUTINES:
+c              Calculate2BIntegralI2 :  Σ_(msp,ms) ∫ dΩ12 ∫ dΩ12p of kernel
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+c     TO DO:
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+c     CHANGES:
+c     v1.0 Nov 2023: New, near-identical to calculate2BI2.f of Compton density code v2.0 hgrie Oct 2022
+c           New documentation -- kept only documentation of changes in Compton if relevant/enlightening for this code. 
+c           No back-compatibility 
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+c     COMMENTS:
+c     
+c     twoSmax/twoMz dependence: none, only on quantum numbers of (12) subsystem
+c
+
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
       subroutine Calculate2BIntegralI2(Int2B,
 c     &     Int2Bx,Int2By,Int2Bpx,Int2Bpy, ! for STUMP, see below
      &     extQnumlimit,
@@ -7,20 +27,7 @@ c     &     Int2Bx,Int2By,Int2Bpx,Int2Bpy, ! for STUMP, see below
      &     l12,s12,t12,mt12,p12,p12p,th12,phi12,Nth12,Nphi12,
      &     thetacm,k,
      &     AngularType12,angweight12,calctype,verbosity)
-ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-c     hgrie May 2018: used to be part of 3HeCompt/twobody/
-c     now part of twobodyvia2Ndensity/, backward compatibility deliberately broken
-c     change: now "USE clebsch" refers to routine in common-densities/2Ndensity-modules/
-c     that's strictly speaking only a change in Makefile and not in this file,
-c     but it does break bitwise compatibility of output files (relative change is <10^-5)
-c      
-c     twoSmax/twoMz dependence: none, only on quantum numbers of (12) subsystem
-ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-c     
-c     hgrie 20 June 2014: modified for use of LebedevLaikov or Gaussian
-c     integration for theta & phi separately,
-c     for solid angle integral in (12) system 
-ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 c
       USE clebsch
       implicit none
@@ -29,24 +36,30 @@ c
       include '../common-densities/params.def'
       include '../common-densities/calctype.def'
 c     
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+c     INPUT VARIABLES:
+      
       integer,intent(in) :: extQnumlimit
       integer,intent(in) :: m12p,m12,j12p,s12p,l12p,j12,s12,l12,Nth12,Nphi12
       integer,intent(in) :: t12p,t12,mt12p,mt12
       
-c     hgrie 20 June 2014: added for LebedevLaikov
-      integer,intent(in) :: AngularType12
-      real*8,intent(in) :: angweight12(Nangmax,Nangmax)
-c     index limits of iphi, depending on AngularType12:
-      integer imin,imax,jmin,jmax
-      
-      integer,intent(in) :: calctype,verbosity
-c     end add hgrie
-      
       real*8,intent(in) :: thetacm,k,th12(Nangmax),phi12(Nangmax)
       
+      integer,intent(in) :: AngularType12
+      real*8,intent(in) :: angweight12(Nangmax,Nangmax)
+      integer,intent(in) :: calctype,verbosity
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+c     OUTPUT VARIABLES:
+
       complex*16,intent(out) :: Int2B(1:extQnumlimit)
       
 c      complex*16,intent(out) :: Int2Bx,Int2By,Int2Bpx,Int2Bpy ! for STUMP, see below
+      
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+c     LOCAL VARIABLES:
+      
+c     index limits of iphi, depending on AngularType12:
+      integer imin,imax,jmin,jmax
       
       complex*16 Kernel2B(1:extQnumlimit,0:1,-1:1,0:1,-1:1) ! was Compton2Bxx/xy/yx/yy
       
@@ -64,6 +77,7 @@ c      complex*16 Intx(-5:5,-5:5),Inty(-5:5,-5:5)   ! for STUMP, see below
 c      complex*16 Intpx(-5:5,-5:5),Intpy(-5:5,-5:5) ! for STUMP, see below
       complex*16 Yl12pstar
       real*8 cgcp,cgc,p12x,p12y,p12z,p12px,p12py,p12pz,p12,p12p
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 c     
       if (verbosity.eq.1000) continue ! unused variable, kept for future use
 c     
@@ -118,7 +132,7 @@ c     for LebedevLaikov, only sum over diagonal elements of angweight12 (all oth
                   end if    
 c     angle integral: φ of p12
                   do iphi=imin,imax
-                     call calculatepvector(p12x,p12y,p12z,p12,
+                     call CalculatePVector(p12x,p12y,p12z,p12,
      &                    th12(ith),phi12(iphi),verbosity)
                      call getsphericalharmonics(Yl12,l12,th12(ith),phi12(iphi))
 c     angle integral: θprime of p12p
@@ -138,7 +152,7 @@ c     for LebedevLaikov, only sum over diagonal elements of angweight12 (all oth
                         end if    
 c     angle integral: φprime of p12p
                         do jphi=jmin,jmax
-                           call calculatepvector(p12px,p12py,p12pz,p12p,
+                           call CalculatePVector(p12px,p12py,p12pz,p12p,
      &                          th12(jth),phi12(jphi),verbosity)
                            call getsphericalharmonics(Yl12p,l12p,th12(jth),phi12(jphi))
                            Yl12pstar=Real(Yl12p(ml12p))-ci*Imag(Yl12p(ml12p))

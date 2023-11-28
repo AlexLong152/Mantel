@@ -1,16 +1,28 @@
-c     hgrie Oct 2022: v2.0 fewbody-Compton
-c     new Aug 2020, based on 3He density codes with the following datings/changes:
-c     hgrie May 2018: used to be part of 3HeCompt/common
-c     now part of common-densities, backward compatibility deliberately broken
-c     no changes yet
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+c     Part of MANTLE code for One/Twobody Contributions to Few-Nucleon Processes Calculated Via 1N/2N-Density Matrix
+c     NEW Nov 2023: v1.0 Alexander Long/hgrie 
+c               Based on Compton density code v2.0: D. Phillips/A. Nogga/hgrie starting August 2020/hgrie Oct 2022
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+c     CONTAINS SUBROUTINES:
+c              getsphericalharmonics : Calculates the spherical harmonics Ylm
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+c     TO DO:
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+c     CHANGES:
+c     v1.0 Nov 2023: New, identical to file of same name in common-densities/ of Compton density code v2.0 hgrie Oct 2022
+c           New documentation -- kept only documentation of changes in Compton if relevant/enlightening for this code. 
+c           No back-compatibility 
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+c     COMMENTS:
 c
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc    
 cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
       subroutine getsphericalharmonics(Yl,l,theta,phi)
 c
 c**********************************************************************
 c
-cCalculates the spherical harmonics Yl for m from -l to l for a giv. l 
-c     and a given theta and phi
+c     Calculates the spherical harmonics Yl for m from -l to l for a giv. l and a given theta and phi
 c    
 c**********************************************************************
 c
@@ -22,7 +34,6 @@ c
       include 'constants.def'
 c
 c**********************************************************************
-c
 c   OUTPUT VARIABLES:
 c
 c      complex*16 Yl(-Lmax:Lmax)
@@ -31,7 +42,6 @@ c
 c Yl(ml)-spherical harmonics of angular momentum l at angle (theta,phi)
 c
 c----------------------------------------------------------------------
-c
 c   INPUT VARIABLES:
 c
       integer,intent(in) :: l
@@ -41,7 +51,6 @@ c     theta,phi-input solid angle
 c     l-angular momentum
 c
 c----------------------------------------------------------------------
-c
 c   LOCAL VARIABLES:
 c
       integer ml

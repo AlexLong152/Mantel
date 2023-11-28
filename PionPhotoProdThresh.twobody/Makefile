@@ -46,6 +46,7 @@ SHELL=/bin/sh
 # OBJS defined below, modify as needed.  OBJS are the source files (.f)
 # with .f -> .o .   Directories are relative to make directory.
 OBJS=\
+calculateQs.PionPhotoProdThresh.o \
 readinput.twobody.PionPhotoProdThresh.o \
 2Bkernel.PionPhotoProdThresh.o \
 2Bspinsym.PionPhotoProdThresh.o \
@@ -59,7 +60,7 @@ usesymmetries.PionPhotoProdThresh.o \
 ../twobodyvia2Ndensity/setquads.o \
 ../twobodyvia2Ndensity/spinstructures.o \
 ../common-densities/andreasquads.o \
-../common-densities/calcmomenta.o \
+../common-densities/calculatePVector.o \
 ../common-densities/gauleg.o \
 ../common-densities/getylm.o \
 ../common-densities/gridGauleg.o \

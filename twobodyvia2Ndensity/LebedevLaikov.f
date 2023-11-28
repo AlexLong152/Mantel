@@ -1,12 +1,20 @@
-c     hgrie Oct 2022: v2.0 fewbody-Compton
-c     new Aug 2020, based on 3He density codes with the following datings/changes:
-      subroutine LebedevLaikovWts(thq,phiq,angwgth,Nanggrid,verbosity)
-ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-c     hgrie May 2018: used to be part of 3HeCompt/twobody/
-c     now part of twobodyvia2Ndensity/, backward compatibility deliberately broken
-c     no changes yet
-ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-c     Version 7 hgrie Feb 2013 -- NEW FILE  
+ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+c     Part of MANTLE code for Twobody Contributions to Few-Nucleon Processes Calculated Via 2N-Density Matrix
+c     NEW Nov 2023: v1.0 Alexander Long/hgrie 
+c               Based on Compton density code v2.0: D. Phillips/A. Nogga/hgrie starting August 2020/hgrie Oct 2022
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+c     CONTAINS SUBROUTINES:
+c              LebedevLaikovWts : contsruct LebedevLaikov points and weights for angular integraions
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+c     TO DO:
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+c     CHANGES:
+c     v1.0 Nov 2023: New, identical to LebedevLaikov.f of Compton density code v2.0 hgrie Oct 2022
+c           New documentation -- kept only documentation of changes in Compton if relevant/enlightening for this code. 
+c           No back-compatibility 
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+c     COMMENTS:
+
 c     Use Lebedev-Laikov Grid for integration over solid angle: grid spaced
 c     "uniformly" over surface of unit sphere -- see readMEs in common-densities/.
 c     Weights are normalised such that
@@ -56,6 +64,9 @@ c     format of these files: 3 columns with
 c     phi \in {-pi;pi}   theta \in {0;\pi}   weight (including sin(theta))
 c     NB: first angle in these tables and files is PHI, NOT theta!!
 c     
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+      subroutine LebedevLaikovWts(thq,phiq,angwgth,Nanggrid,verbosity)
 c**********************************************************************
 c     
       implicit none
@@ -70,6 +81,7 @@ c
       include '../common-densities/params.def' !comment out for stand-alone routine
       include '../common-densities/constants.def' !comment out for stand-alone routine
 c     
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 c     OUTPUT VARIABLES: -- 
 c     
       real*8,intent(out) :: thq(Nangmax),phiq(Nangmax)
@@ -80,12 +92,9 @@ c     c
 c     real*8 thq(arraysize),phiq(arraysize)
 c     real*8 angwgth(arraysize)   
 c     
-c     INTERNAL VARIABLES:
-c     
-c     Pi
-c     real*8 Pi
-c     parameter (Pi = 3.141592653589794E0)
-c     iterators      
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+c     LOCAL VARIABLES:
+c      
       integer i
 c     table of gridsizes for which LevedevLaikov grids can be calculated or are stored
       integer :: valtable(28) =
@@ -117,6 +126,7 @@ c
       real*8 :: table2030(3*2030)
       real*8 :: table2354(3*2354)
 
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 c     initialise arrays to zero
       thq=0.0e0
       phiq=0.0e0

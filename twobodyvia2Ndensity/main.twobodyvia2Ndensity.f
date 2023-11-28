@@ -1,30 +1,27 @@
-c     hgrie Oct 2022: v2.0 fewbody-Compton
-c     new Aug 2020, based on 3He density codes with the following datings/changes:
 cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-c     hgrie May 2017, revised May 2018 (see below)
-c     based on Andreas Nogga's "template" files common-densities/2Ndensity-module/testcompdens.F90 in May 2017/2018.
-c                                           and common-densities/2Ndensity-module/CompDens.F90 in May 2017/2018.
+c     Part of MANTLE code for Twobody Contributions to Few-Nucleon Processes Calculated Via 2N-Density Matrix
+c     NEW Nov 2023: v1.0 Alexander Long/hgrie 
+c               Based on Compton density code v2.0: D. Phillips/A. Nogga/hgrie starting August 2020/hgrie Oct 2022
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+c     CONTAINS:
+c     main programme of twobody mantle code : sets up, performs Σ_(mt12,j12,s12,l12,m12) 
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+c     TO DO:
+c     Does output of multiple angles & energies to same output file work? May need adjusting output file name.
 c
-c     This file adapted from main.twobody.f, plus changes.
-c          added read of density matrix,
-c          eliminated spectator(3)-integrations and calls, and calls to wave function
-c          densityFileName now used to set name of input density file
-c          split setquad setting up angular integrations into separate routines
-c                 for (12) and spectator (3) system
-c          here, (12) integration only -- spectator (3) integration provided by 2Ndensity
-c     j12max can now be specified in input file: default is j12max=2 for onebody and j12max=1 for twobody,
-c     as in previous runs (where they were hardwired in code).
-c     These values give MEs which are converged to better than 0.7% -- see documentation/.
-c
-c     twoSmax/twoMz dependence: only via array size of Result()
-cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+c     CHANGES:
+c     v1.0 Nov 2023: New, based on main.twobodyvia2Ndensity.f of Compton density code v2.0 hgrie Oct 2022
+c           New documentation -- kept only documentation of changes in Compton if relevant/enlightening for this code. 
+c           No back-compatibility 
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 c     NOTE ON UNITS hgrie Nov 2023
 c      
 c     The "mantle" code has base unit fm (but NOT the output file/Result(), see below!)
-c     p12, p12p: momenta in fm^-1
-c     rho      : 2N density in fm^3 (quantum numbers per volume momentum space)
+c     p12, p12p: momenta in fm⁻¹
+c     rho      : 2N density in fm³ (quantum numbers per volume momentum space)
 c
-c     k        : photon omentum/energy still given in MeV
+c     k        : photon momentum/energy still given in [MeV]
 c
 c     However, in finalstatesums.twobodyvia2Ndensity.f, the call
 c              call Calculate2BIntegralI2(...,p12*HC,P12MAG(ip12p)*HC,...)
@@ -65,36 +62,16 @@ c     This guarantees that onebody and twobody have the same size and can simply
 c
 c     amplitude = onebody + twobody, without any relative factors (provided both provide output in same base units).
 c     
-cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-c     TO do:
-c     Does output of multiple angles & energies to same output file work? May need adjusting output file name.
-c
-cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-c     CHANGES:
-c
-c     hgrie Oct 2022: *HUGE CHANGE* inside twobodyfinalstatesumsvia2Ndensity():
-c           Defined twobody ME to INCLUDE the factor 1/(2π)³ !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-c           so that final amplitudes for onebody and twobody have SAME sizes.
-c      
-c     hgrie Sep 2020: in readinputTwobody():
-c           removed NP12p = 3rd variable in integration-grid
-c           line of input file. It is actually never used for anything!
-c           That also reduced number of arguments of readinputTwobody()!
-c     hgrie Aug/Sep 2020: rewrote makedensityfilename() to deal with extracting densities from a .gz or downloading from server
-c     hgrie June 2018: renamed "parity" to "symmetry -- see notes in usesymmetry+*.f
-c       
-c     hgrie May 2018: decluttered files: remove obsolete variables, unify look, documentation,...
-c     hgrie May 2018: new subroutines to read input, weeded out unused variables, new input.dat format. 
-c     hgrie May 2018: rewritten to accommodate hdf5 format for input files of 2N density rho
-c     hgrie May 2018:
-c           All quantum numbers which start with "two" run over integers
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+c     COMMENTS:
+c     All quantum numbers which start with "two" run over integers
 c                  Examples: 
 c                     twoMz,twoMzp: magnetic quantum numbers of in/out target nucleus, times 2.
 c                     twoSnucl: 2 x spin of target nucleus
 c           For all such variables, run over 2xQM values.
 c                  Examples:
 c                     in do-loops: twoMz runs from +twoSnucl to -twoSnucl, in steps of -2
-c                     in array: Result(extQnum,twoMzp,twoMz) runs over   (1:extQnumlimit,-twoSnucl:twoSnucl,-twoSnucl:twoSnucl)
+c                     in array: Result(extQnum,twoMzp,twoMz) runs over  (1:extQnumlimit,-twoSnucl:twoSnucl,-twoSnucl:twoSnucl)
 c
 c     This numbering agrees with Andreas' assignments of magnetic quantum numbers.
 c     In ARRAYs, this means a slight waste of space since we leave many array entries unused.
@@ -103,30 +80,22 @@ c     Example S=1:   3x3=9 entries needed, but array is (-2:2,-2:2): 5x5=25 : 28
 c
 c     Still, our arrays are for small nuclei -- we do not really waste a lot. Not a time/storage issue.
 c
-c     hgrie May 2018: outsourced symmetry+output into sub routine outputroutine(), identical for onebody and twobody
-c      
-c     Implemented symmetry for arbitrary nucleon spin:
+c     Implementing symmetry for arbitrary nucleon spin:
 c     Use Mzp>=0, and for Mzp=0, run only over Mz>=0
 c     -- that's still 2 more than necessary since ME(+0->+0) = ME(-0->-0) and ME(+0->-0) = ME(-0->+0)
-c     but it's good enough, saving lots of CPU time.
+c     but it's good enough, saving a bit of CPU time: not a huge lot since still need to do the time-consuming angular integrals over the kernel.
 c     see manuscript "Compton Densities Approach" pp11-12
-c      
-c     In May 2018, Andreas replaced fkltt() by a more sophisticated and parallel routine initclebsch() in
-c     common-densities/2Ndensity-module/clebsch.F .
-c      
-c     hgrie June 2017: implemented run over several energies and angles into same output file
-c                      implemented: when input file contains a 2Ndensity filename which contains "XXX"
-c                                   and "YYY" strings, then these are automatically replaced by
-c                                   XXX => energy of run (in numeric format used by Andreas)
-c                                   YYY => angle of run (in numeric format used by Andreas)
-c                      That reduces error-proneness.
-c      
-c     modified by hgrie June 2014:
-c     calculate nucleon amplitudes outside fewbody loops
-c     use symmetry to calculate only amplitudes with 3He out-spin +1/2
-c     modified hgrie 20 June 2014: add option to use LebedevLaikov or Gaussian
-c     integration for theta & phi separately,
-c     for solid angle integral in (12) system 
+c
+c     When input file contains a 2Ndensity filename which contains ceryain strings, then these are automatically replaced by
+c         NUCLEUS => name of nucleus
+c         DENSITY => 2N density filename/truncated
+c         ORDER => order (calctype)
+c         XXX => energy of run (in numeric format used by Andreas)
+c         YYY => angle of run (in numeric format used by Andreas)
+c         DATE => date/time yyyymmmddd-hhmmss.nnn (up to milisecond)   
+c     That reduces error-proneness.
+      
+c     Option to use LebedevLaikov or Gaussian integration for theta & phi separately, for solid angle integral in (12) system 
       
 cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc   
 
@@ -146,6 +115,7 @@ c     program argument management
       character*500 inputfile   ! argument string is written to this
 c     
 c*********************************************************************
+      
       integer NP12A,NP12B,NP12
       real*8  P12A,P12B,P12C
       real*8 P12MAG(Npmax),AP12MAG(Npmax)
@@ -204,20 +174,19 @@ c
 c----------------------------------------------------------------------
 c     
 c     Momentum variables:
-c     
-c     pp-magnitude of final-state relative three-momentum vector,
-c     in IA=p + 1/2(k - k') as a vector sum. In IA the
-c     kinematics are 
-c     
+c     The kinematics are 
+c
+c             k in, kp out, angle thetacm in rad
 c                 \    /
 c                  \  /   
-c     k' + k/2 + p  \/        -k/2 + p
-c     ---------------------------------------
-c     
-c     
-c     
-c     ---------------------------------------
-c     - k/2 - p
+c     p12-k/2   --------     p12p-kp/2
+c     ----------|      |--------------
+c               |      |  
+c               |      |  
+c               |      |  
+c               |      |  
+c     ----------|      |--------------
+c     -p12-k/2  --------   -p12p-kp/2
 c     
       real*8 k,kth,kphi,kp,kpth,kpphi,Qk,Qkth,Qkphi
       real*8 t,omega
@@ -232,13 +201,11 @@ c
       integer j12max            ! max total ang mom in (12) subsystem -- =1 suffices for 1% accuracy.
       
 c     projections of target nucleus' in-spin, out-spin
-      integer twoMz,twoMzp      !  -- these two not use right now
+c      integer twoMz,twoMzp      !  -- these two not use right now
       
       integer extQnum, extQnumlimit      ! counter and number of combined external quantum numbers of in and out state
       
       integer symmetry          ! whether and which specific package Usesymmetry() should be used for process -- NOT YET IMPLEMENTED!!!
-
-      real*8 frac
 
       complex*16, allocatable :: Result(:,:,:) ! extQnum from 1 to extQnumlimit; twoMzp from -twoSnucl to twoSnucl, stepsize 2; twoMz from -twoSnucl to twoSnucl, stepsize 2; rest blank.
       
@@ -331,7 +298,7 @@ c     BS: new Nangles algebra due to changed input form
       
 c**********************************************************************
 c     (12) integration set-up
-c          spectator (3) integration is provided by 2Ndensity, so nothing to do. 
+c          spectator integrations are provided by 2Ndensity, so nothing to do. 
 c     define total number of integration points for (12) mom magnitude
       NP12 = NP12A+NP12B
 c
@@ -383,9 +350,9 @@ c**********************************************************************
             allocate(Result(1:extQnumlimit,-twoSnucl:twoSnucl,-twoSnucl:twoSnucl))
             Result=c0
 c**********************************************************************
-c     hgrie June 2017: create name of 1Ndensity file for given energy and angle, unpack it
+c     hgrie June 2017: create name of 2Ndensity file for given energy and angle, unpack it
 c     define correct formats for energy and angle
-c     hgrie May 2018: outsourced into subroutine common-densities/makedensityfilename.f
+c     outsourced into subroutine common-densities/makedensityfilename.f
             densityFileName = originaldensityFileName
             call makedensityfilename(densityFileName,Egamma,thetacm,rmDensityFileLater,verbosity)
 c**********************************************************************
@@ -448,6 +415,8 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
       if (test .ne. 0) stop "*** ERROR: Could not close output file!!!"
       
       write (*,*) '*** Wrote output to file: ',TRIM(outfile)
+
+      if (extQnum.eq.1000) continue
       
       stop
       end PROGRAM

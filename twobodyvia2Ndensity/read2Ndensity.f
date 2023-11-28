@@ -1,7 +1,19 @@
-c     hgrie Oct 2022: v2.0 fewbody-Compton
-c     new Aug 2020, based on 3He density codes with the following datings/changes:
 cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-c     hgrie May 2017, revised May 2018 (see below)
+c     Part of MANTLE code for Twobody Contributions to Few-Nucleon Processes Calculated Via 2N-Density Matrix
+c     NEW Nov 2023: v1.0 Alexander Long/hgrie 
+c               Based on Compton density code v2.0: D. Phillips/A. Nogga/hgrie starting August 2020/hgrie Oct 2022
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+c     CONTAINS SUBROUTINES:
+c              read2Ndensity : read input specific for 2N density computations
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+c     TO DO:
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+c     CHANGES:
+c     v1.0 Nov 2023: New, based on read2Ndensity.f of Compton density code v2.0 hgrie Oct 2022
+c           New documentation -- kept only documentation of changes in Compton if relevant/enlightening for this code. 
+c           No back-compatibility
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+c     COMMENTS:
 c     based on Andreas Nogga's "template" files common-densities/2Ndensity-module/testcompdens.F90 in May 2017/2018.
 c                                           and common-densities/2Ndensity-module/CompDens.F90 in May 2017/2018.
 c      
@@ -12,24 +24,7 @@ cc                  get2Nchannum(l12,s12,j12,mt12,m12,twoMz): alpha-index of giv
 cc              and
 cc                  rhoindx(alpha2N,alpha2Np): entry of rho-matrix for given alpha & alphap
 c
-c     rhoindx(alpha2N,alpha2Np) has units of fm^3 [Andreas email 24 May 2018]
-c      
-c     twoSmax/twoMz dependence: none
-cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-c     TO do:
-c      
-cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-c     CHANGES:
-c
-c     hgrie Aug 2020: deallocate the arrays which were declared ALLOCATABLE,PUBLIC in meshpoints.F90
-c      
-c     hgrie May 2020: added option for output into mathematica-readable file for particular p12' and p12 (defined inside do-loop!)
-c      
-c     hgrie May 2018: more extensive description of changes in main.*.f
-c                     rewritten such that magnetic quantum numbers are "2xMz" etc
-c                     except for (12) quantum numbers -- see below (comments after def of l12, usually commented out)
-c                     rewritten to accommodate hdf5 format for input files of 2N density rho
-c     
+c     rhoindx(alpha2N,alpha2Np) has units of fm³ [Andreas email 24 May 2018]
 ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 
       subroutine read2Ndensity(densityFileName,Anucl,twoSnucl,omega,theta,j12max,P12MAG,AP12MAG,NP12,verbosity)
@@ -48,11 +43,22 @@ c      USE constants
       USE amplitudes
       USE hdf_tool
       
+ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
       IMPLICIT NONE
 c**********************************************************************
       include '../common-densities/constants.def'
-c**********************************************************************
-      
+ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+c     OUTPUT vARIABLES:
+c     rho(ip12,ip12p,rindx) , defined as "PUBLIC" via module CompDen.
+c     ip12 and ip12p are indices of the momentum array P12mag(ip12) of the INTEGRATION,
+c                          NOT of the grid with which the densities were produced!
+c                                     rindx is the quantum-number combination of incoming and outgoing
+c                                          (12) subsystem (alpha2N, alpha2Np)
+c             omval [in fm^-1], thetaval [in rad]:  defined as "PUBLIC" via module CompDen.
+c                                     are energy and angle to which 2Ndensity file applies.      
+ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+c     INPUT VARIABLES:
+c      
       character*500,intent(in) :: densityFileName  ! abuse of language: for Compton with density, this is name of density file
       
       integer,intent(in) :: NP12, j12max
@@ -66,18 +72,17 @@ c**********************************************************************
       
       integer,intent(in) :: Anucl
       integer,intent(in) :: twoSnucl
-      
-c     for outputting 2Ndensity at particular values of momenta (NOT ALL!!) in mathmeatica friendly format
+      integer,intent(in) :: verbosity         ! verbosity of stdoutout
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+c     LOCAL VARIABLES:
+c      
+c     for outputting 2Ndensity at particular values of momenta (NOT ALL!!) in mathematica-friendly format
 c     at two momentum-pairs with indices (idxp12,idxp12+jumpidx) and (idxp12+jumpidx,idxp12) 
       character*500    :: mathoutputfilename
       integer          :: test        ! a generic integer for testing i/o
       integer          :: idxp12      ! index of first momentum ip12
       integer          :: jumpidx     ! by how much ip12 and ip12p should differ: |ip12-ip12p|=jumpidx
       integer          :: jump        ! dummy
-c     
-ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-c     new stuff
       
       real*8,ALLOCATABLE :: omsets(:),thetasets(:) ! arrays of energies & angles in density file. Length: nsets
       integer nsets,iset ! number of  energy-angle cobinations covered by density file, counter
@@ -94,10 +99,7 @@ c     p12p => our P12MAG: the array of grid points (not quite, little rounding r
 c     However, we will NOT use them UNLESS for cross-checking.
 c     We rely on our won momentum grid, also for the FF calculation
       
-ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-
-cc    following are definitions for possible cross checks below 
+c     following are definitions for possible cross checks below 
       integer rindx
       integer ip12,l12,s12,j12,t12,mt12,m12 ! automatic integers, so not mutiplied with 2, unlike twoMz 
       integer ip12p,l12p,s12p,j12p,t12p,mt12p,m12p ! automatic integers, so not mutiplied with 2, unlike twoMz
@@ -105,18 +107,9 @@ cc    following are definitions for possible cross checks below
       integer alpha2N,alpha2Np    
       real*8 :: ffpairs,ffnn,ffnp,ffpp
       
-      integer verbosity         ! verbosity of stdoutout
-      
-c     OUTPUT: rho(ip12,ip12p,rindx) , defined as "PUBLIC" via module CompDen.
-c     ip12 and ip12p are indices of the momentum array P12mag(ip12) of the INTEGRATION,
-c                          NOT of the grid with which the densities were produced!
-c                                     rindx is the quantum-number combination of incoming and outgoing
-c                                          (12) subsystem (alpha2N, alpha2Np)
-c             omval [in fm^-1], thetaval [in rad]:  defined as "PUBLIC" via module CompDen.
-c                                     are energy and angle to which 2Ndensity file applies.      
-cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
       write(*,*) "*********************** 2N DENSITY MATRIX PARAMETERS ***************************"
-ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
       
 c     prepare MPI and distributions of processors; parameters are in parallel.dat
       CALL initparallel
@@ -158,7 +151,7 @@ c call the initialization of the amplitudes modules
 c this call mainly prepares the distribution of the 
 c grid points over processors   
       CALL initamp
-ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 
 c     open rho file for reading, read bookkeeping, dimensions etc.
       CALL openread_rho_hdffile(densityFileName)
@@ -221,7 +214,7 @@ c     output pair form factors * number of pairs: cross check not using the dens
          write(*,'(A(4F15.6))') "  Eff. # pairs:",
      &               Anucl*(Anucl-1)/2*ffnn,Anucl*(Anucl-1)/2*ffnp,Anucl*(Anucl-1)/2*ffpp,Anucl*(Anucl-1)/2*ffpairs
       end do ! set
-cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 c     following could be used for verbosity and cross checks....
 c     
 c check alphas: output to screen (that's a LOT!!!!)     

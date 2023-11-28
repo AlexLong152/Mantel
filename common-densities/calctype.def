@@ -1,26 +1,21 @@
-c     hgrie Oct 2022: v2.0 fewbody-Compton
-c     new Aug 2020, based on 3He density codes with the following datings/changes:
-c     hgrie May 2018: used to be part of 3HeCompt/common
-c     now part of common-densities, backward compatibility deliberately broken
-c     no changes yet
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+c     Part of MANTLE code for One/Twobody Contributions to Few-Nucleon Processes Calculated Via 1N/2N-Density Matrix
+c     NEW Nov 2023: v1.0 Alexander Long/hgrie 
+c               Based on Compton density code v2.0: D. Phillips/A. Nogga/hgrie starting August 2020/hgrie Oct 2022
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+c     CHANGES:
+c     v1.0 Nov 2023: New, near-identical to file of same name in common-densities/ of Compton density code v2.0 hgrie Oct 2022
+c           New documentation -- kept only documentation of changes in Compton if relevant/enlightening for this code. 
+c           No back-compatibility 
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+c     COMMENTS:
 c
-cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 c
-c	OQ2,OQ3,Oepsilon3,VaryA-type of calculation to be done
-c	lab,cm-frame in which results are to be calculated
-c	S,full-type of deuteron
-c	Bonn,Nijm-NN potential for deuteron wave function
-c	hgrie 19 Oct 2014: differentiated between VaryAn and VaryAp
-c	      implemented Odelta counting parameters
-c
-	integer OQ2,OQ3,OQ4,Oepsilon3,VaryAp,VaryAn,Odelta0,Odelta2,Odelta3,Odelta4
-	integer lab,cm
-	integer S,full
-	integer Bonn,Nijm
+	integer OQ2,OQ3,OQ4,Oepsilon3,VaryAp,VaryAn,Odelta0,Odelta2,Odelta3,Odelta4 ! calctype
 c
 	parameter (OQ2=2,OQ3=3,Oepsilon3=4,OQ4=5)
 	parameter (Odelta0=OQ2,Odelta2=OQ3,Odelta3=Oepsilon3,Odelta4=6)
 	parameter (VaryAp=0,VaryAn=1)
-	parameter (lab=1,cm=2)
-	parameter (S=1,full=2)
-	parameter (Bonn=1,Nijm=2)

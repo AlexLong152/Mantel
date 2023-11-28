@@ -1,25 +1,33 @@
-c     hgrie Oct 2022: v2.0 fewbody-Compton
-c     new Aug 2020, based on 3He density codes with the following datings/changes:
-c     hgrie May 2017, revised May 2018 (see below):
-c     2N density integration (replaces I3 integration of Deepshikha's code)
-c     based on Deepshikha's twobody/finalstatesums.twobody.f
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+c     Part of MANTLE code for Twobody Contributions to Few-Nucleon Processes Calculated Via 2N-Density Matrix
+c     NEW Nov 2023: v1.0 Alexander Long/hgrie 
+c               Based on Compton density code v2.0: D. Phillips/A. Nogga/hgrie starting August 2020/hgrie Oct 2022
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+c     CONTAINS SUBROUTINES:
+c              twobodyfinalstatesumsvia2Ndensity : perform Σ_(mt12p=mt12,j12p,s12p,l12p,m12p,Mzp,Mz) ∫ dp12 p12² ∫ dp12p p12p²/(2π)³ (HC)³ * rho(p12,p12p) * KERNEL
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+c     TO DO:
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+c     CHANGES:
+c     v1.0 Nov 2023: New, based on finalstatesums.twobodyvia2Ndensity.f of Compton density code v2.0 hgrie Oct 2022
+c           New documentation -- kept only documentation of changes in Compton if relevant/enlightening for this code. 
+c           No back-compatibility 
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+c     COMMENTS:
 c
 c     twoMz dependence: arrays and do-loops
-cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc   
-c     TO do:
-c      
-cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-c     CHANGES:
-c      
-c     hgrie Oct 2022: *HUGE CHANGE* inside twobodyfinalstatesumsvia2Ndensity():
-c           Defined twobody ME to INCLUDE the factor 1/(2π)³ !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-c           so that final amplitudes for onebody and twobody have SAME sizes.
-c      
-c     hgrie June 2018: renamed "parity" to "symmetry -- see notes in usesymmetry+*.f
-c       
-c     hgrie May 2018: more extensive description of changes in main.*.f
-c                     rewritten such that magnetic quantum numbers are "2*Mz" etc
 c
+c     Defined twobody ME to INCLUDE the factor 1/(2π)³, so that final amplitudes for onebody and twobody have SAME sizes.
+c      
+c     Note structure of loops is almost the same as in one-body case, only real difference is in computation of I2, and
+c     fact that p_{12}' integral now runs over full range [0,infty). Partly for this reason, the order of the p_{12}'
+c     and p_3' loops has been interchanged, c.f. the one-body version of this routine.
+c     
+c     hgrie 20 June 2014: modified for use of LebedevLaikov or Gaussian
+c     integration for theta & phi separately, for solid angle integral in (12) system 
+
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
       subroutine twobodyfinalstatesumsvia2Ndensity(
      &     Result,
      &     Anucl,twoSnucl,extQnumlimit,j12,m12,l12,s12,t12,mt12,
@@ -29,13 +37,6 @@ c
      &     th12,phi12,Nth12,Nphi12,j12max,
      &     AngularType12,angweight12,calctype,symmetry,verbosity)
 c     
-c     Note structure of loops is almost the same as in one-body case, only real difference is in computation of I2, and
-c     fact that p_{12}' integral now runs over full range [0,infty). Partly for this reason, the order of the p_{12}'
-c     and p_3' loops has been interchanged, c.f. the one-body version of this routine.
-c     
-c     hgrie 20 June 2014: modified for use of LebedevLaikov or Gaussian
-c     integration for theta & phi separately, for solid angle integral in (12) system 
-
       USE CompDens ! needs module CompDens.mod
 c     
       implicit NONE
@@ -43,7 +44,9 @@ c
       include '../common-densities/constants.def'
       include '../common-densities/params.def'
       include '../common-densities/calctype.def'
-c     
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+c     INPUT VARIABLES:
+      
       integer,intent(in) :: j12,m12,l12,s12,t12,mt12 ! are automatically integers, so do NOT multiply by 2, unlike for Mz=>twoMz
       integer,intent(in) :: j12max
       real*8,intent(in)  :: k,thetacm
@@ -55,11 +58,20 @@ c
       integer,intent(in) :: Anucl,twoSnucl
       integer,intent(in) :: extQnumlimit
       
-      integer extQnum      ! counter of combined external quantum numbers of in and out state
-c
+      integer,intent(in) :: AngularType12
+      real*8,intent(in)  :: angweight12(Nangmax,Nangmax)
+      integer,intent(in) :: calctype,symmetry,verbosity
+
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+c     OUTPUT VARIABLES:
+      
       complex*16,intent(out) :: Result(1:extQnumlimit,-twoSnucl:twoSnucl,-twoSnucl:twoSnucl)
 c      
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+c     LOCAL VARIABLES:
+      
       integer alpha2N,alpha2Np,rindx
+      integer extQnum           ! counter of combined external quantum numbers of in and out state
       
       integer mt12p,j12p,s12p,l12p,t12p,m12p ! quantum #s of (12) system -- integer already, so no factor 2
       integer ip12,ip12p
@@ -71,10 +83,6 @@ c      complex*16 Int3x, Int3y, Int3px, Int3py  ! for STUMP, see below
 c      complex*16 factx, facty, factpx, factpy  ! for STUMP, see below
       
       integer twoMz,twoMzp
-
-      integer,intent(in) :: AngularType12
-      real*8,intent(in)  :: angweight12(Nangmax,Nangmax)
-      integer,intent(in) :: calctype,symmetry,verbosity
 
 c      logical invokesymmetrytwoMzp  ! function to invoke symmetry/-ies of amplitudes, dependent on process
 c      logical invokesymmetrytwoMz   ! function to invoke symmetry/-ies of amplitudes, dependent on process
@@ -163,6 +171,7 @@ c                              if (invokesymmetryextQnum(symmetry,extQnumlimit,e
          end do                   !s12p
       end do                      !j12p
       
+      if (symmetry.eq.1000) continue
       if (verbosity.eq.1000) continue
       return
       end

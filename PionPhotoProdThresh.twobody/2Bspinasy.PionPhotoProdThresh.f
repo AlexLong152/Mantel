@@ -1,6 +1,18 @@
-c     hgrie Oct 2022: v2.0 fewbody-Compton
-c     new Aug 2020, based on 3He density codes with the following datings/changes:
-cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+c     Part of KERNEL code for Twobody Contributions to Few-Nucleon Processes Calculated Via 2N-Density Matrix
+c     NEW Nov 2023: v1.0 Alexander Long/hgrie 
+c               Based on Compton density code v2.0: D. Phillips/A. Nogga/hgrie starting August 2020/hgrie Oct 2022
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+c     CONTAINS SUBROUTINES:
+c              CalcKernel2BAasy : set up (1↔2) asymmetric part of the kernel
+c              CalcKernel2BBasy : set up (1↔2) asymmetric part of the kernel
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+c     TO DO:
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+c     CHANGES:
+c     v1.0 Nov 2023: New
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+c     COMMENTS:
 c     hgrie 17 Nov 2023: split the following subroutines into new file spinstructures.f and renamed two for more intuitive names:
 
 c         singlesigmaasy => singlesigmaasy
@@ -8,18 +20,10 @@ c         Calcholdasy    => doublesigmaasy
 c      
 c     This way, spintricks*f only contains individual diagram
 c     contributions and not these routines which are generally relevant for spin structures.
-ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-c     hgrie May 2018: used to be part of 3HeCompt/twobody/
-c     now part of twobodyvia2Ndensity/, backward compatibility deliberately broken
-c     no changes yet
+c      
 c     twoSmax/twoMz dependence: none, only on quantum numbers of (12) subsystem
-ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-c     contains:
-C               CalcKernel2BAasy
-C               CalcKernel2BBasy
-c               
-ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
       
       subroutine CalcKernel2BAasy(Kernel2B,
      &     factor,
@@ -52,7 +56,7 @@ c
       integer,intent(in) :: verbosity
 c     
 c********************************************************************
-c     INTERNAL VARIABLES:
+c     LOCAL VARIABLES:
 c      
       complex*16 hold(0:1,-1:1,0:1,-1:1)
       integer Msp,Ms
@@ -84,8 +88,8 @@ ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
       if (verbosity.eq.1000) continue
       return
       end
-c====================================================================
-c====================================================================
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 c     
       subroutine CalcKernel2BBasy(Kernel2B,
      &     factor,
@@ -105,7 +109,7 @@ c
       include '../common-densities/constants.def'
 c     
 c********************************************************************
-c     INPUT/OUTPUT VARIABLE:
+c     INPUT/OUTPUT VARIABLES:
 c     
       complex*16,intent(inout) :: Kernel2B(1:extQnumlimit,0:1,-1:1,0:1,-1:1)
 c      complex*16 Kernel2Bpx(0:1,-1:1,0:1,-1:1),Kernel2Bpy(0:1,-1:1,0:1,-1:1)
@@ -120,7 +124,7 @@ c
       integer,intent(in) :: verbosity
 c     
 c********************************************************************
-c     INTERNAL VARIABLES:
+c     LOCAL VARIABLES:
 c      
       complex*16 hold(0:1,-1:1,0:1,-1:1)
       integer Msp,Ms

@@ -1,59 +1,28 @@
-c
-c
-c     contains 
-c              outputroutine()
-c
-c     use to be part of usesymmetry+writeoutput-densities.f.
-c     usesymmetry() eliminated
-c     function arguments changed
+ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+c     Part of MANTLE code for One/Twobody Contributions to Few-Nucleon Processes Calculated Via 1N/2N-Density Matrix
+c     NEW Nov 2023: v1.0 Alexander Long/hgrie 
+c               Based on Compton density code v2.0: D. Phillips/A. Nogga/hgrie starting August 2020/hgrie Oct 2022
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+c     CONTAINS SUBROUTINES:
+c              outputroutine        : output result to stdout and output file
 c      
-c     hgrie Oct 2022: v2.0 fewbody-Compton
-c     new Aug 2020, based on 3He density codes with the following datings/changes:
-c
-c     hgrie May 2018:
-c     merges old common/useparity.f and parity/output routines at the end of main.*.f
-c     contains 
-c              outputroutine()
-c
-c     twoSmax/twoMz dependence: via array sizes & do-loops
-
-cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-c     TO do:
-c      
-cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+c     TO DO:
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 c     CHANGES:
-c
-c     hgrie Aug 2020: added call to outputtomath() which produces
-c     mathematica-friendly output of all MEs.
-      
-c     hgrie May 2018:
-c     merges old common/useparity.f and parity/output routines at the end of main.*.f
-c     contains useparityroutine()
-c              outputroutine()
+c     v1.0 Nov 2023: New, near-identical to file of same name in common-densities/ of Compton density code v2.0 hgrie Oct 2022
+c           New documentation -- kept only documentation of changes in Compton if relevant/enlightening for this code. 
+c           No back-compatibility 
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+c     COMMENTS:
 c
 c     twoSmax/twoMz dependence: via array sizes & do-loops
 
-c     hgrie May 2018: used to be part of 3HeCompt/common
-c     now part of common-densities, backward compatibility deliberately broken
-c     no changes yet
-c      
-c     hgrie May 2018: more extensive description of changes in main.*.f
-c     rewritten such that magnetic quantum numbers are "2*Mz" etc
-c     changed phases of parity operation in useparityroutine() to cover 3He and deuteron,
-c      
-c     Implemented symmetry for arbitrary nucleon spin:
-c     Use Mzp>=0, and for Mzp=0, run only over Mz>=0
-c     -- that's still 2 more than necessary since ME(+0->+0) = ME(-0->-0) and ME(+0->-0) = ME(-0->+0)
-c     but it's good enough, saving lots of CPU time.
-c     see manuscript "Compton Densities Approach" pp11-12
-c*************************************************************************************
-c*************************************************************************************
-c*************************************************************************************
-
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
       subroutine outputroutine(outUnitno,twoSnucl,extQnumlimit,
      &     Result,verbosity)
-c     hgrie May 2018: new routines, outsourced from main.*.f
-c
+c      
 c**********************************************************************
 c     
       implicit none

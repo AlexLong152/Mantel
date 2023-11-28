@@ -1,21 +1,30 @@
-c     hgrie Oct 2022: v2.0 fewbody-Compton
-c     hgrie Aug/Sep 2020: rewrote to deal with extracting densities from a .gz,
-c     if input file name ends with ".gz" or if direct filename not found,
-c     and of downloading files form a server
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+c     Part of MANTLE code for One/Twobody Contributions to Few-Nucleon Processes Calculated Via 1N/2N-Density Matrix
+c     NEW Nov 2023: v1.0 Alexander Long/hgrie 
+c               Based on Compton density code v2.0: D. Phillips/A. Nogga/hgrie starting August 2020/hgrie Oct 2022
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+c     CONTAINS SUBROUTINES:
+c              makedensityfilename : create name of 1N/2Ndensity file for given energy and angle, unpack it
+c                                    define correct formats for energy and angleoutput to stdout in mathematica-frendly format
+c      
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+c     TO DO:
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+c     CHANGES:
+c     v1.0 Nov 2023: New, identical to file of same name in common-densities/ of Compton density code v2.0 hgrie Oct 2022
+c           New documentation -- kept only documentation of changes in Compton if relevant/enlightening for this code. 
+c           No back-compatibility 
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+c     COMMENTS:
+c     deals also with extracting densities from a .gz, if input file name ends with ".gz" or if direct filename not found,
+c     and with downloading files form a server
 c     new Aug 2020, based on 3He density codes with the following datings/changes:
 c     hgrie May 2018: outsourced from main.*via*density.f into its own subroutine
 c     hgrie June 2017: create name of 1Ndensity file for given energy and angle, unpack it
 c     define correct formats for energy and angle
       
-cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-c     CHANGES:
-c
-c     hgrie Aug 2020: rewrote to deal with extracting densities from a .gz, if input file name ends with ".gz" or if direct filename not found
-c     hgrie May 2018: used to be part of 3HeCompt/common
-c     now part of common-densities, backward compatibility deliberately broken
-c     no changes yet
-c
-cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
       subroutine makedensityfilename(densityFileName,Egamma,thetacm,rmDensityFileLater,verbosity)
 c**********************************************************************
       IMPLICIT NONE

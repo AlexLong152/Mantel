@@ -1,79 +1,51 @@
-c     hgrie Oct 2022: v2.0 fewbody-Compton
-c     new Aug 2020, based on 3He density codes with the following datings/changes:
-ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-c     hgrie May 2018: used to be part of 3HeCompt/twobody/
-c     now part of twobodyvia2Ndensity/, backward compatibility deliberately broken
-c     now only contains Setquad12()
-c            -- Setquad3() was only for spectator integration, which is absent in density 
+ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+c     Part of MANTLE code for Twobody Contributions to Few-Nucleon Processes Calculated Via 2N-Density Matrix
+c     NEW Nov 2023: v1.0 Alexander Long/hgrie 
+c               Based on Compton density code v2.0: D. Phillips/A. Nogga/hgrie starting August 2020/hgrie Oct 2022
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+c     CONTAINS SUBROUTINES:
+c              Setquad12 : Set up the quadratures for the radial, theta, & phi integrations of the (12) systems
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+c     TO DO:
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+c     CHANGES:
+c     v1.0 Nov 2023: New, identical to setquads.f of Compton density code v2.0 hgrie Oct 2022
+c           New documentation -- kept only documentation of changes in Compton if relevant/enlightening for this code. 
+c           No back-compatibility 
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+c     COMMENTS:
+c     Set up the quadratures for the radial, theta, & phi integrations of the (12) systems:
+c     use of LebedevLaikov or Gaussian integration for theta & phi separately,
+c     for solid angle integral in (12) system 
+c     combined wth*wphi*sin(th) (weight of angles theta and phi) into
+c     one array angweight12(,) -- so the sum of all weights is 4\pi.
+c      
 c     twoSmax/twoMz dependence: none
 ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
       subroutine Setquad12(th12,Nth12,phi12,Nphi12,
      &     Nordth12,Nthbins12,Nordphi12,Nphibins12,
      &     AngularType12,angweight12,Nanggrid12,verbosity)
 ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-c     set up quadratures for the radial, theta, & phi integrations
-c      
-c     These routines set up the quadratures for the radial, theta, & phi
-c     integrations of the (12) systems.
-c     
-c     Written by D.P.-11/97
-c     hgrie 20 June 2014: modified for use of LebedevLaikov or Gaussian
-c     integration for theta & phi separately,
-c     for solid angle integral in (12) system 
-c     combined wth*wphi*sin(th) (weight of angles theta and phi) into
-c     one array angweight12(,) -- so the sum of all weights is 4\pi.
-c     
-c     hgrie May 2017: split single routine
-c      setquad(th3,wth3,Nth3,th12,Nth12,phi12,Nphi12,
-c     &     Nordth3,Nthbins3,Nordth12,Nthbins12,Nordphi12,Nphibins12,
-c     &     AngularType12,angweight12,Nanggrid12,verbosity)
-c      into separate routines for (12)
-c
-c     setquad12(th12,Nth12,phi12,Nphi12,
-c     &     Nordth12,Nthbins12,Nordphi12,Nphibins12,
-c     &     AngularType12,angweight12,Nanggrid12,verbosity)
-c
-c     and spectator (3)
-c      
-c      setquad3(th3,wth3,Nth3,Nordth3,Nthbins3,verbosity)
-c      
-c     since spectator (3) integrations not needed in 2N density approach. 
-
-cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-c     This routine sets up the quadratures for the radial, theta, & phi
-c     integrations, as well as those for the numerical zero to one int.
-c     used to calculate the invariant functions A1 through A6.
-c     
-c     Written by D.P.-11/97
-c     hgrie 20 June 2014: modified for use of LebedevLaikov or Gaussian
-c     integration for theta & phi separately,
-c     for solid angle integral in (12) system 
-c     combined wth*wphi*sin(th) (weight of angles theta and phi) into
-c     one array angweight12(,) -- so the sum of all weights is 4\pi.
-c     
-c     
+c 
       implicit none
       include '../common-densities/params.def'
       include '../common-densities/constants.def'
       include '../common-densities/calctype.def'
 c     
-c     *******************************************************************
-c     
+ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 c     OUTPUT VARIABLES:
 c     
-c     pq,wp-radial quadratures and weights, set up on [0,infty]
-c     Np-total number of radial quadratures
-c     thq,wth-theta quadratures and weights, set up on [0,PI]
 c     Nth-total number of theta quadratures
-c     phi12,wphi-phi quadratures and weights, set up on [0,2 PI]
 c     Nphi12-total number of phi quadratures
+c     angweight12: combined weight of angular integrations, _including_ sin^2(theta)
+c     so sum of all weights is 4*Pi
 c     
-      real*8 th12(Nangmax),wth12(Nangmax)
-      real*8 phi12(Nangmax),wphi(Nangmax)
-      integer Nth12,Nphi12
+      real*8,intent(out)  :: th12(Nangmax)
+      real*8,intent(out)  :: phi12(Nangmax)
+      integer,intent(out) :: Nth12,Nphi12
+      real*8,intent(out)  :: angweight12(Nangmax,Nangmax)
 c     
-c     *******************************************************************
-c     
+ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 c     INPUT VARIABLES:
 c     
 c     Nordp,Npbins-number of quadratures/bin and number of bins for
@@ -88,23 +60,28 @@ c     quadratures
 c     hgrie 20 June 2014:
 c     AngularType12-determines nature of angular integration in (12) system
 c     Nanggrid12: number of points on solid angle grid of Lebedev-Laikov grid
-c     angweight12: combined weight of angular integrations, _including_ sin^2(theta)
-c     so sum of all weights is 4*Pi
-c     angwgth: local variable passed from LebedevLaikov routine 
 c     
-      integer Nordth12,Nthbins12,Nordphi12,Nphibins12
+      integer,intent(in) :: Nordth12,Nthbins12,Nordphi12,Nphibins12
 
-      integer AngularType12,Nanggrid12
-      integer verbosity
-      real*8 angweight12(Nangmax,Nangmax)
-      real*8 angwgth(Nangmax)
+      integer,intent(in) :: AngularType12,Nanggrid12
+
+      integer,intent(in) :: verbosity
+ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+c     LOCAL VARIABLES:
+      
+c     th12,wth-theta quadratures and weights, set up on [0,PI]
+c     phi12,wphi-phi quadratures and weights, set up on [0,2 PI]
 
       integer ith,iphi
+      real*8 wth12(Nangmax)
+      real*8 wphi(Nangmax)
       
+c     angwgth: local variable passed from LebedevLaikov routine 
+      real*8 angwgth(Nangmax)
 c     
-c     *******************************************************************
+ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 c     
-c     hgrie 20 June 2014: set up  two-dimensional angular integration mesh
+c     Set up  two-dimensional angular integration mesh
 c     CalculateIntegralI2 ((12)-integration) needs theta & phi mesh
 c     Fill array with ZEROES
       angweight12=0.0E0

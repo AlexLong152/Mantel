@@ -1,10 +1,23 @@
-c     hgrie Oct 2022: v2.0 fewbody-Compton
-c     new Aug 2020, based on 3He density codes with the following datings/changes:
-c     hgrie May 2018: used to be part of 3HeCompt/common
-c     now part of common-densities, backward compatibility deliberately broken
-c     no changes yet
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+c     Part of MANTLE code for One/Twobody Contributions to Few-Nucleon Processes Calculated Via 1N/2N-Density Matrix
+c     NEW Nov 2023: v1.0 Alexander Long/hgrie 
+c               Based on Compton density code v2.0: D. Phillips/A. Nogga/hgrie starting August 2020/hgrie Oct 2022
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+c     CONTAINS SUBROUTINES:
+c              gauleg : generates gauss legendre points and weights on the interval x1 to x2.
+c              gauss  : CALCULATES LAGUERRE POINTS AND WEIGHTS FOR INTEGRATION OF EXP(-X)*FCT00012340
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+c     TO DO:
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+c     CHANGES:
+c     v1.0 Nov 2023: New, identical to file of same name in common-densities/ of Compton density code v2.0 hgrie Oct 2022
+c           New documentation -- kept only documentation of changes in Compton if relevant/enlightening for this code. 
+c           No back-compatibility 
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+c     COMMENTS:
 c
-cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
       SUBROUTINE GAULEG(X1,X2,X,W,N)
 c
 c     This subroutine generates gauss legendre points and weights on the
@@ -15,6 +28,7 @@ c
 c      real*4 X1,X2,X(N),W(N)
       dimension x(n),w(n)
       PARAMETER (EPS=3.D-12)
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
       M=(N+1)/2
       XM=0.5D0*(X2+X1)
       XL=0.5D0*(X2-X1)
@@ -39,11 +53,14 @@ c      real*4 X1,X2,X(N),W(N)
    12 CONTINUE
       RETURN
       end
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 c****************************************************************************
       SUBROUTINE GAUSS(WL,P,N)
       IMPLICIT real*8 (A-H,M,O-Z)
 C  CALCULATES LAGUERRE POINTS AND WEIGHTS FOR INTEGRATION OF EXP(-X)*FCT00012340
       DIMENSION WL(32),P(32)
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 C  LAGUERRE WEIGHTS ARE WL,  LAGUERRE POINTS ARE P
       if(N.EQ.4) GO TO 4
       if(N.EQ.6) GO TO 6

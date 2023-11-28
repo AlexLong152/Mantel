@@ -1,6 +1,23 @@
-c hgrie Oct 2022: v2.0 fewbody-Compton
-c     ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-c     hgrie 17 Nov 2023: split the following subroutines into new file spinstructures.f and renamed two for more intuitive names:
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+c     Part of MANTLE code for Twobody Contributions to Few-Nucleon Processes Calculated Via 2N-Density Matrix
+c     NEW Nov 2023: v1.0 Alexander Long/hgrie 
+c               Based on Compton density code v2.0: D. Phillips/A. Nogga/hgrie starting August 2020/hgrie Oct 2022
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+c     CONTAINS SUBROUTINES:
+c              singlesigmasym : compute (σ1.A) + (1↔2)
+c              doublesigmasym : compute (σ1.A)(σ2.B) + (1↔2)
+c              singlesigmaasy : compute (σ1.A) - (1↔2)
+c              doublesigmaasy : compute (σ1.A)(σ2.B) - (1↔2)
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+c     TO DO:
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+c     CHANGES:
+c     v1.0 Nov 2023: New, based on spintricks.f, spintricksasy.f of Compton density code v2.0 hgrie Oct 2022
+c           New documentation -- kept only documentation of changes in Compton if relevant/enlightening for this code. 
+c           No back-compatibility 
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+c     COMMENTS:
+c     hgrie 17 Nov 2023 v2.0 fewbody-Compton: split the following subroutines into new file spinstructures.f and renamed two for more intuitive names:
 
 c         singlesigma     => singlesigmasym
 c         Calchold        => doublesigmasym
@@ -32,17 +49,8 @@ c     Remember that the e²δ⁴ twobody parts were coded by Arman in analogy to
 c     paper for the deuteron,e xtended to inlcude the spin-asymmetric piece (σ1-σ2).A .
 c     However, we have as of Sep 2023 not yet CHECKED that/if Arman's code is a correct implementation.
 c     So this is the first mistake we find in that part. 
-
-
-ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-c     contains:
-c         doublesigmasym
-c         singlesigmasym
-c         doublesigmaasy
-c         singlesigmaasy
-c              
-
-c
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 c====================================================================
 c
       subroutine doublesigmasym(hold,Ax,Ay,Az,Bx,By,Bz,Sp,S,verbosity)
@@ -58,25 +66,23 @@ c
       include '../common-densities/constants.def'
 c     
 c********************************************************************
+c     OUTPUT VARIABLES:
 c     
-c     OUTPUT VARIABLE:
-c     
-      complex*16 hold(0:1,-1:1,0:1,-1:1)
+      complex*16,intent(out) :: hold(0:1,-1:1,0:1,-1:1)
 c     
 c********************************************************************
-c     
 c     INPUT VARIABLES:
 c     
-      real*8 Ax,Ay,Az,Bx,By,Bz,AdotB
-      integer verbosity
-      integer Sp,S
+      real*8,intent(in)  :: Ax,Ay,Az,Bx,By,Bz
+      integer,intent(in) :: verbosity
+      integer,intent(in) :: Sp,S
 c     
 c     Sp,S-final- and initial-state spin
 c     
 c********************************************************************
-c     
 c     LOCAL VARIABLES:
-c     
+c
+      real*8 AdotB
       complex*16 Aplus,Aminus,Bplus,Bminus
 c     
 c     
@@ -107,6 +113,7 @@ c
       if (verbosity.eq.1000) continue
       end
 c
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc      
 cccc  new subroutine to calculate the matrix elements of A.σ 
       subroutine singlesigmasym(hold,Ax,Ay,Az,Sp,S,verbosity)
@@ -122,23 +129,20 @@ c
       include '../common-densities/constants.def'
 c     
 c********************************************************************
-c     
 c     OUTPUT VARIABLE:
 c     
-      complex*16 hold(0:1,-1:1,0:1,-1:1)
+      complex*16,intent(out) :: hold(0:1,-1:1,0:1,-1:1)
 c     
 c********************************************************************
-c     
 c     INPUT VARIABLES:
 c     
-      real*8 Ax,Ay,Az
-      integer verbosity
-      integer Sp,S
+      real*8,intent(in)  :: Ax,Ay,Az
+      integer,intent(in) :: verbosity
+      integer,intent(in) :: Sp,S
 c     
 c     Sp,S-final- and initial-state spin
 c     
 c********************************************************************
-c     
 c     LOCAL VARIABLES:
 c     
       complex*16 Aplus,Aminus
@@ -166,8 +170,8 @@ c     hgrie 25 Sep 2023: following contains added MINUS sign as described at top
       end
 c     
 
-c====================================================================
-c====================================================================
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 c
       subroutine doublesigmaasy(hold,Ax,Ay,Az,Bx,By,Bz,Sp,S,verbosity)   
 c     
@@ -182,22 +186,19 @@ c
       include '../common-densities/constants.def'
 c     
 c********************************************************************
-c     
-c     OUTPUT VARIABLE:
-      complex*16 hold(0:1,-1:1,0:1,-1:1)
+c     OUTPUT VARIABLES:
+      complex*16,intent(out) :: hold(0:1,-1:1,0:1,-1:1)
 c     
 c********************************************************************
-c     
 c     INPUT VARIABLES:
 c     
-      real*8 Ax,Ay,Az,Bx,By,Bz
-      integer Sp,S
-      integer verbosity
+      real*8,intent(in)  :: Ax,Ay,Az,Bx,By,Bz
+      integer,intent(in) :: Sp,S
+      integer,intent(in) :: verbosity
 c
 c     Sp,S-final- and initial-state spin
 c     
 c********************************************************************
-c     
 c     LOCAL VARIABLES:
       complex*16 Aplus,Aminus,Bplus,Bminus
 c     
@@ -221,8 +222,8 @@ c
       if (verbosity.eq.1000) continue
       end
 c
-c********************************************************************
-c********************************************************************
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
       subroutine singlesigmaasy(hold,Ax,Ay,Az,Sp,S,verbosity)
 c     
 c     Calculates anti-symmetric part of spin structure σ.A: (σ1-σ2).A -- checked in manu-script Compton Densities pp. 65aff
@@ -236,21 +237,18 @@ c
       include '../common-densities/constants.def'
 c     
 c********************************************************************
+c     OUTPUT VARIABLES:
 c     
-c     OUTPUT VARIABLE:
-c     
-      complex*16 hold(0:1,-1:1,0:1,-1:1)
+      complex*16,intent(out) :: hold(0:1,-1:1,0:1,-1:1)
 c     
 c********************************************************************
-c     
 c     INPUT VARIABLES:
 c     
-      real*8 Ax,Ay,Az
-      integer verbosity
-      integer Sp,S
+      real*8,intent(in)  :: Ax,Ay,Az
+      integer,intent(in) :: verbosity
+      integer,intent(in) :: Sp,S
 c     
 c********************************************************************
-c     
 c     LOCAL VARIABLES:
 c     
       complex*16 Aplus,Aminus

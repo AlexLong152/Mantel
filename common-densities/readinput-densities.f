@@ -1,84 +1,40 @@
-c     hgrie Oct 2022: v2.0 fewbody-Compton
-c     new Aug 2020, based on 3He density codes with the following datings/changes:
-c     hgrie May 2018, based on common/readinput.f
-c
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+c     Part of MANTLE code for One/Twobody Contributions to Few-Nucleon Processes Calculated Via 1N/2N-Density Matrix
+c     NEW Nov 2023: v1.0 Alexander Long/hgrie 
+c               Based on Compton density code v2.0: D. Phillips/A. Nogga/hgrie starting August 2020/hgrie Oct 2022
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+c     CONTAINS SUBROUTINES:
+c              ReadinputCommon         : process input for parameters which are identical for onebody and twobody
+c              ReadinputCommonComments : process input comments (last line of input file)
+c     CONTAINS FUNCTIONS:
+c              stringtolower           : function to convert string to all-lowercase
+c              halfinteger             : function to divide integer by 2 to string representing half-integer
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+c     TO DO:
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+c     CHANGES:
+c     v1.0 Nov 2023: New, based on file of same name in common-densities/ of Compton density code v2.0 hgrie Oct 2022
+c           New documentation -- kept only documentation of changes in Compton if relevant/enlightening for this code. 
+c           No back-compatibility 
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+c     COMMENTS:
+c      
 c     subroutines to read input files for density calculations:
 c
-c     ReadinputCommon: input for parameters which are identical for onebody and twobody
-c     ReadinputOnebody: input for parameters for onebody
-c     ReadinputTwobody: input for parameters for twobody
-c      
-cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-c     TO do:
-c      
-cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-c     CHANGES:
-c     hgrie Sep 2020: in readinputTwobody():
-c        -- Removed NP12p = 3rd variable in integration-grid
-c           line of input file. It is actually never used for anything!
-c           That also reduced number of arguments of readinputTwobody()!
-c        -- Changed read of angle parameters such that input file does not need to
-c           contain 5 numbers when only 2 are needed for LL
-c     hgrie Aug 2020: added readinputCommonComments()
-c     hgrie Aug 2020: corected couting of independent MEs:
-c      now ...+2*mod(twoSnucl+1,2) for correct number -- was 2*(mod(twoSnucl,2)-1)
-c      
-c     hgrie June 2018: renamed "parity" to "symmetry
-c     -- see notes in usesymmetry+writeoutput.densities.f
-c      
-c     hgrie May 2018: used to be part of 3HeCompt/common
-c     now part of common-densities, backward compatibility deliberately broken
-c     no changes yet
-c      
-c     hgrie May 2018: more extensive description of changes in main.*.f
-c                     rewritten such that magnetic quantum numbers are "2xMz" etc
-c      
-c     -------------------------------------------------------------------
-c     LEGACY: Relevant notes on original common/redinput.f:
-c     this combined the 3 subroutines (with different ordering in input.dat) into one
-c      
-c     Written by D.P.-11/97
-c     
-c     Bruno Strandberg
-c     ********************************************************************
-c     Rev: modified 4 June 2014 from Deepshikha's 3He code
-c     1. Got rid of densitytype, deuttype
-c     2. Got rid of palpha,pbeta,nalpha,nbeta
-c     3. Got rid of dg1p,dg2p,dg3p,dg4p,dg1n,dg2n,dg3n,dg4n
-c     4. Got rid of firsttime - remove from other parts of code!
-c     5. Got rid of ampfile,amp1Bfile,amp2Bfile
-c     6. Got rid of ampUnitno,amp1BUnitno,amp2BUnitno
-c     7. Created thetaLow, thetaHigh
-c     8. Changed interval-->thetaInterval
-c     9. Added Oepsilon3 option to calcstring parsing
-c     10. Added whichbody option
-c     11. Added variables to control quadrature settings
-c     ********************************************************************
-c     hgrie 20 June 2014: modified for use of LebedevLaikov or Gaussian
-c     integration for theta & phi separately,
-c     for solid angle integral in (12) system
-c     
-c     This routine reads in the values of the external photon momentum &
-c     scattering angle in the lab frame. It takes them from the I/O
-c     unit denoted by inUnitno, where they are stored in MeV and degrees.
-c     
-c     *******************************************************************
-c     hgrie Feb 2016: added OQ4 and Odelta4 options,
-c     but activated only for twobody!     
-c     ********************************************************************
-c
-c     hgrie May 2017: implemented that j12max (max total ang mom in (12) subsystem)
-c                     can be set in input file.
-c                     Defaults are j12max=2 for onebody and j12max=1 for twobody.
-c                     That is enough for convergence on the <1% level in amplitudes.
-c
-ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc      
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
       subroutine ReadinputCommon(Elow,Ehigh,Einterval,
      &     thetaLow,thetaHigh,thetaInterval,
      &     outfile,descriptors,densityFileName,inUnitno,
      &     nucleus,Anucl,twoSnucl,Mnucl,extQnumlimit,
      &     symmetry,verbosity)
-c      
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+c     This routine reads in the values of the external photon momentum &
+c     scattering angle in the lab frame. It takes them from the I/O
+c     unit denoted by inUnitno, where they are stored in MeV and degrees.
+c
+c
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
       implicit none
 c     
       include '../common-densities/constants.def'
@@ -132,8 +88,6 @@ c
       character*500 stringtolower ! function to convert string to all-lowercase, for comparisons -- defined at file end
       character*5 halfinteger     ! function to divide integer by 2 to string representing half-integer-- defined at end
 c
-      character*500 dummy
-      
 c     *******************************************************************
 c     
 c     set logical variables to FALSE, other parameters to "0": defines default values!
@@ -311,12 +265,13 @@ c add symmetry status to descriptor
       return
       end
       
-ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+      subroutine ReadinputCommonComments(descriptors,inUnit,verbosity)     
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 c     hgrie Aug 2020
 c     Now the routine which reads last line as comment and appends to descriptors
-
-      subroutine ReadinputCommonComments(descriptors,inUnit,verbosity)     
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
       
 c     VARIABLES PASSED INOUT:
       character*200,intent(inout) :: descriptors ! additional descriptors of calculation for outputfilename

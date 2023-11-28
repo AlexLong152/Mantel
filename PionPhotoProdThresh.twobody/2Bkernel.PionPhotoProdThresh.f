@@ -1,4 +1,19 @@
-c
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+c     Part of KERNEL code for Twobody Contributions to Few-Nucleon Processes Calculated Via 2N-Density Matrix
+c     NEW Nov 2023: v1.0 Alexander Long/hgrie 
+c               Based on Compton density code v2.0: D. Phillips/A. Nogga/hgrie starting August 2020/hgrie Oct 2022
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+c     CONTAINS SUBROUTINES:
+c              KernelGreeting         : output to stdout with message which process computed and its version number
+c              Calc2Bspinisospintrans : compute total kernel by calling all diagrams up to given order
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+c     TO DO:
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+c     CHANGES:
+c     v1.0 Nov 2023: New, loosely based on 2Bspinisospintrans.f of Compton density code v2.0 hgrie Oct 2022
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+c     COMMENTS:
+c      
 c     Organisation of orders:
 c     First Odelta0 computation -- terminates after that if not more needed.
 c     Else moves on to Odelta2 computation -- terminates after that if not more needed.
@@ -6,14 +21,15 @@ c     Else moves on to Odelta3 computation -- etc.
 c
 c
 c
-ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 c     hgrie Nov 2023: show kernel process and version
 c     included here since will change when kernel changes
       subroutine KernelGreeting(verbosity)
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
       implicit none
       integer,intent(in) :: verbosity         ! verbosity index for stdout
-ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
       write(*,*) "--------------------------------------------------------------------------------"
       write(*,*) "Kernel: Twobody Pion Photoproduction at Threshold"
       write(*,*) "--------------------------------------------------------------------------------"
@@ -24,19 +40,14 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
       if (verbosity.eq.1000) continue
       end
 c     
-ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-c     hgrie Oct 2022: v2.0 fewbody-Compton
-c     new Aug 2020, based on 3He density codes with the following datings/changes:
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
       subroutine Calc2Bspinisospintrans(Kernel2B,
 c     &     Comp2Bx,Comp2By,Comp2Bpx,Comp2Bpy, ! for STUMP, see below
      &     extQnumlimit,
      &     t12,mt12,t12p,mt12p,l12,s12,
      &     l12p,s12p,thetacm,k,px,py,pz,ppx,ppy,ppz,calctype,verbosity)
 ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-c     hgrie May 2018: used to be part of 3HeCompt/twobody/
-c     now part of twobodyvia2Ndensity/, backward compatibility deliberately broken
-c     no changes yet
 c     twoSmax/twoMz dependence: none, only on quantum numbers of (12) subsystem
 ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 c     NOTE ON UNITS: hgrie Nov 2023
@@ -59,47 +70,18 @@ c
 c     ==> Set your kernel up here so that your Result() has the desired units and factors of (2π)³. Do NOT make unit changes outside this file!
 c
 ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-c     Original version by Deepshikha, Spring 2006
-ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-c     Aug 2016 modifications by Arman
-c     -added OQ4 diagrams
-c     -corrected overall T=0 vs. T=1 factor in symmetric part
-c     -found missing factor of -2 in anti-symmetric part
-
-c     List of changes to OQ3 calculation cf. Deepshikha's original:
-c     (1) OQ3 diagrams must carry (-1)**(t21) in factor[ABCC12DD12] and factorAasy
-c     (2) factors in asymmetric diagrams:
-c     (a) additional (-2) in all asymmetric diagrams, i.e. including (1) above, it should be (-1)**(t21)
-c     in diagram A
-c     (b) factors of other diagrams more tricky since 1<->2 symmetry is more complicated there
-c     -- correct version now specified with explicit "+"    and "-" signs; Deepshikha's original 
-c     had the signs reversed (see point (a) above), except in diagram E
-c     (c) [DP] in diagram E Deepshikha appears to've also missed the fact that 1<->2 leaves spin
-c     structure unchanged, and so minus signs are not needed there.
-ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-c     hgrie/DP Feb 2017: Added switch for OQ4 diagrams, corrected diagram E, commenting
-ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-c     hgrie Feb 2017: modified order call such that OQ4 automatically calculates OQ3+OQ4 
-c     note: readinput.f sets twobody at
-c     Odelta0=OQ2 => ZERO: code exited inside readinput.f
-c     Odelta2=OQ3 => calculated below: Beane diagrams
-c     Odelta0=OQ3 => ZERO: code exited inside readinput.f
-c     Odelta4=OQ4 => calculated after "if.calctype.eq.OQ3 return" below: Arman's diagrams
-ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-c     DRP Feb 2017: check of all factors and extensive commenting. 
-ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-c     
-c     Calls:
+c     CALLS:
 c     calculateqs: to calculate momenta
-c     CalcCompton...: to calculate Compton amplitudes. Although much of the work is done
-c     in those routines via "Calchold"
+c     CalcKernel2B...: to calculate kernel amplitudes. Much of the work is done in those routines via CalcKernel2B...
 ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
       implicit none
-c     
+
       include '../common-densities/constants.def'
       include '../common-densities/params.def'
       include '../common-densities/calctype.def'
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+c     OUTPUT VARIABLES:
       
       complex*16,intent(out) :: Kernel2B(1:extQnumlimit,0:1,-1:1,0:1,-1:1) ! was Comp2Bxx/xy/yx/yy
 c      complex*16,intent(out) :: Comp2Bx(0:1,-1:1,0:1,-1:1) ! for STUMP, see below
@@ -107,13 +89,15 @@ c      complex*16,intent(out) :: Comp2By(0:1,-1:1,0:1,-1:1) ! for STUMP, see bel
 c      complex*16,intent(out) :: Comp2Bpx(0:1,-1:1,0:1,-1:1) ! for STUMP, see below
 c      complex*16,intent(out) :: Comp2Bpy(0:1,-1:1,0:1,-1:1) ! for STUMP, see below
 c     
+c     Note that Kernel2B.. computes the amplitude for extQnums
+c     Indices: 1st: extQnum
+c              2nd: NN spin of final state: S=0 or S=1 (s12p)
+c              3rd: NN spin projection of final state ms12p      
+c              4th: NN spin of initial state: S=0 or S=1 (s12)
+c              5th: NN spin projection of initial state ms12      
 ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-c     Note that Comp2Bab computes the amplitude for polarization a->polarization b
-c     Indices in Comp2Bab are that first index gives NN spin state: S=0 or S=1,
-c     second index gives spin projection. This is for final state. Third and fourth
-c     indices give same for initial state. 
-ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-c     
+c     INPUT VARIABLES:
+      
       integer,intent(in) :: calctype
       real*8,intent(in)  :: thetacm,k
       integer,intent(in) :: extQnumlimit
@@ -121,6 +105,8 @@ c
       real*8,intent(in)  :: px,py,pz,ppx,ppy,ppz
                
       integer,intent(in) :: verbosity
+ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+c     LOCAL VARIABLES:
       
       real*8 qpx,qpy,qpz,qppx,qppy,qppz,qx,qy,qz
       real*8 q12x,q12y,q12z,qp12x,qp12y,qp12z,qpp12x,qpp12y,qpp12z
@@ -135,24 +121,14 @@ cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 c     
 c     Definitions of momenta repeated here for convenience
 c     (All quantities in this comment to be read as vectors)
-c     
-c     q=p - p' + (k+k')/2: momentum of meson after photon 1 strikes, but
-c     before photon 2 leaves
-c     q'=p - p' + (k'-k)/2
-c     q''=p - p' + (k-k')/2: momentum of meson after photon 1 strikes, and
-c     after photon 2 leaves
-c     
-c     q12, q12', q12''=these quantities with p->-p and p'->-p'=>
-c     q12''=-q' and q12'=-q''
+c
+c     XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
 c     
 ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 c     
 c     Factors:
-c     factorA->factorE: for symmetric (in spin) part of OQ3 diagrams
-c     factorAasy: for anti-symmetric (in spin) part of OQ3 diagram A
-c     factorC12,factorD12,factorE12: factors associated with corresponding
-c     diagrams after 1<->2 exchange=>momenta are "12" momenta cf. original
-c     factors
+c      
+c     XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX     
 c     
 ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 *************************************************************************************
@@ -168,7 +144,7 @@ c      Comp2Bpy=c0 ! for STUMP, see below
 c     
 c     Calculate momenta q,q',q':
 c     
-      call calculateqs(qx,qy,qz,q12x,q12y,q12z,qpx,qpy,qpz,
+      call CalculateQs(qx,qy,qz,q12x,q12y,q12z,qpx,qpy,qpz,
      &     qp12x,qp12y,qp12z,qppx,qppy,qppz,qpp12x,qpp12y,qpp12z,
      &     qpppx,qpppy,qpppz,qppp12x,qppp12y,qppp12z,
      &     qsq,qpsq,qppsq,qpppsq,q12sq,qp12sq,qpp12sq,qppp12sq,px,py,pz,

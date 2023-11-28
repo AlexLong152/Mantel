@@ -1,27 +1,50 @@
-c     hgrie Oct 2022: v2.0 fewbody-Compton
-c     new Aug 2020, based on 3He density codes with the following datings/changes:
-c     hgrie May 2018: used to be part of 3HeCompt/common
-c     now part of common-densities, backward compatibility deliberately broken
-c     no changes yet
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+c     Part of MANTLE code for One/Twobody Contributions to Few-Nucleon Processes Calculated Via 1N/2N-Density Matrix
+c     NEW Nov 2023: v1.0 Alexander Long/hgrie 
+c               Based on Compton density code v2.0: D. Phillips/A. Nogga/hgrie starting August 2020/hgrie Oct 2022
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+c     CONTAINS SUBROUTINES:
+c              AnglePtsWts  : Generate Nbins evenly spaced bins in interval (xlow,xhigh) and fill each bin with Nord gaussian integ pts/wts
+c              RadialPtsWts : Generate Radial integration pts and wts in MeV (same units as c):
+c                             divide p = (0,infty) into Nbins according to spline or tangent mapping with Np pts and wts each.
+c              gridGauleg   : Fill each bin in a grid with Nord gaussian integration points(&wts)
+c     File contains subroutines for dividing an interval into bins and filling each bin with gaussian pts/wts.
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+c     TO DO:
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+c     CHANGES:
+c     v1.0 Nov 2023: New, identical to file of same name in common-densities/ of Compton density code v2.0 hgrie Oct 2022
+c           New documentation -- kept only documentation of changes in Compton if relevant/enlightening for this code. 
+c           No back-compatibility 
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+c     COMMENTS:
 c
-cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc      
-c     File contains subroutines for dividing an interval into bins and
-c filling each bin with gaussian pts/wts.
-c CONTENTS
-c      subroutine AnglePtsWts
-c      subroutine RadialPtsWts
-c      subroutine gridGauleg
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+      subroutine AnglePtsWts(Nord,Nbins,NXMX,xlow,xhigh, xX,dxX,Nx,verbosity)
 c--------------------------------------------------------------------
 c     Generate Nbins evenly spaced bins in interval (xlow,xhigh) and
 c     fill each bin with Nord gaussian integ pts/wts
-c--------------------------------------------------------------------
-      subroutine AnglePtsWts(Nord,Nbins,NXMX,xlow,xhigh, xX,dxX,Nx,verbosity)
-      integer NBINSMX
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+c     OUTPUT VARIABLES:
+
+      real*8,intent(out) :: xX(NXMX),dxX(NXMX)
+ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+c     INPUT VARIABLES:
+
+      integer,intent(in) :: Nord,Nbins,NXMX,Nx 
+      real*8,intent(in)  :: xlow,xhigh
+      
       integer,intent(in) :: verbosity
+ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+c     LOCAL VARIABLES:
+      
+      integer NBINSMX
       parameter(NBINSMX=64)     ! common to AnglePtsWts & RadialPtsWts
-      integer Nord,Nbins,NXMX,Nx, i
-      real*8 binWalls(NBINSMX), xlow,xhigh, xX(NXMX),dxX(NXMX)
+      integer i
+      real*8 binWalls(NBINSMX)
       common/binWork/binWalls
+ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 c     
       do i=1,Nbins+1
          binWalls(i) = xlow + (xhigh-xlow)*(i-1.)/Nbins
@@ -35,6 +58,10 @@ c
       if (verbosity.eq.1000) continue
       return
       end
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+      subroutine RadialPtsWts(Nord,Nbins,NRADIALMX,PI, RadialType,
+     &     t0,pbar,tdel, c_tail,  pX,dpX,Np,verbosity)
 c-------------------------------------------------------------------
 c   Generate Radial integration pts and wts in MeV (same units as c).
 c     Divide p = (0,infty) into Nbins according to spline or tangent
@@ -53,9 +80,8 @@ c OUTPUT:
 c	pX,wtpX.................integ pts & wts
 c	Np......................Nbins*Np = total # of integ pts & wts
 c--------------------------------------------------------------------
-      subroutine RadialPtsWts(Nord,Nbins,NRADIALMX,PI, RadialType,
-     &     t0,pbar,tdel, c_tail,  pX,dpX,Np,verbosity)
       implicit none
+ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
       integer NBINSMX
       parameter(NBINSMX=64)     ! common to AnglePtsWts & RadialPtsWts
       integer Nord,Nbins,NRADIALMX,RadialType, Np, i
@@ -64,6 +90,7 @@ c--------------------------------------------------------------------
       double precision pX(NRADIALMX),dpX(NRADIALMX), xi,cosx,sinx
       logical tailTF
       common/binWork/binWalls
+ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 c     
       if (Nbins.gt.NBINSMX) then
          write(6,*) 'ERROR: too many bins. Nbins = ',Nbins
@@ -132,8 +159,12 @@ c
       if (verbosity.eq.1000) continue
       return
       end
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+      subroutine gridGauleg(binWalls,NbinWalls,Nord,NMX,tailTF,
+     &     c_tail,PI,xX,dxX,NxPts,verbosity)
 c--------------------------------------------------------------------
-cFill each bin in a grid with Nord gaussian integration points(&wts).
+c     Fill each bin in a grid with Nord gaussian integration points(&wts).
 c--------------------------------------------------------------------
 c INPUT:
 c	binWalls........array defining walls of bins
@@ -150,9 +181,8 @@ c		bins defined by (binwalls(1),...,binwalls(NbinWalls))
 c	dxX.....gaussian wts corresponding to xX
 c	NxPts...Nord*(NbinWalls-1) = # pts in xX
 c--------------------------------------------------------------------
-      subroutine gridGauleg(binWalls,NbinWalls,Nord,NMX,tailTF,
-     &     c_tail,PI,xX,dxX,NxPts,verbosity)
       implicit none
+ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
       integer NxPts, NbinWalls,Nord,NMX,  iNord,iGrid,i,NORDMX
       double precision xX(NMX),dxX(NMX), binWalls(NbinWalls),
      &     c_tail,PI,xxx
@@ -160,6 +190,7 @@ c--------------------------------------------------------------------
       logical tailTF
       parameter(NORDMX=100)
       double precision PtsGauss(NORDMX),WtsGauss(NORDMX)
+ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 c     
       if (Nord.gt.NORDMX) then
          write(6,*) 'ERROR: Nord > NORDMX'

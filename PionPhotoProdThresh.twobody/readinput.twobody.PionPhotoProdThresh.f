@@ -1,82 +1,25 @@
-c     hgrie Oct 2022: v2.0 fewbody-Compton
-c     new Aug 2020, based on 3He density codes with the following datings/changes:
-c     hgrie May 2018, based on common/readinput.f
-c
-c     subroutines to read input files for density calculations:
-c
-c     ReadinputCommon: input for parameters which are identical for onebody and twobody
-c     ReadinputOnebody: input for parameters for onebody
-c     ReadinputTwobody: input for parameters for twobody
-c      
-cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-c     TO do:
-c      
-cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+c     Part of KERNEL code for Twobody Contributions to Few-Nucleon Processes Calculated Via 2N-Density Matrix
+c     NEW Nov 2023: v1.0 Alexander Long/hgrie 
+c               Based on Compton density code v2.0: D. Phillips/A. Nogga/hgrie starting August 2020/hgrie Oct 2022
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+c     CONTAINS SUBROUTINES:
+c              ReadinputTwobody : read parts of input specific to twobody kernel
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+c     TO DO:
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 c     CHANGES:
-c     hgrie Sep 2020: in readinputTwobody():
-c        -- Removed NP12p = 3rd variable in integration-grid
-c           line of input file. It is actually never used for anything!
-c           That also reduced number of arguments of readinputTwobody()!
-c        -- Changed read of angle parameters such that input file does not need to
-c           contain 5 numbers when only 2 are needed for LL
-c     hgrie Aug 2020: added readinputCommonComments()
-c     hgrie Aug 2020: corected couting of independent MEs:
-c      now ...+2*mod(twoSnucl+1,2) for correct number -- was 2*(mod(twoSnucl,2)-1)
+c     v1.0 Nov 2023: New, based on common/readinput-densities.f of Compton density code v2.0 hgrie Oct 2022
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+c     COMMENTS:
+c     ReadinputTwobody: read input file for parameters for twobody
 c      
-c     hgrie June 2018: renamed "parity" to "symmetry
-c     -- see notes in usesymmetry+writeoutput.densities.f
-c      
-c     hgrie May 2018: used to be part of 3HeCompt/common
-c     now part of common-densities, backward compatibility deliberately broken
-c     no changes yet
-c      
-c     hgrie May 2018: more extensive description of changes in main.*.f
-c                     rewritten such that magnetic quantum numbers are "2xMz" etc
-c      
-c     -------------------------------------------------------------------
-c     LEGACY: Relevant notes on original common/redinput.f:
-c     this combined the 3 subroutines (with different ordering in input.dat) into one
-c      
-c     Written by D.P.-11/97
-c     
-c     Bruno Strandberg
-c     ********************************************************************
-c     Rev: modified 4 June 2014 from Deepshikha's 3He code
-c     1. Got rid of densitytype, deuttype
-c     2. Got rid of palpha,pbeta,nalpha,nbeta
-c     3. Got rid of dg1p,dg2p,dg3p,dg4p,dg1n,dg2n,dg3n,dg4n
-c     4. Got rid of firsttime - remove from other parts of code!
-c     5. Got rid of ampfile,amp1Bfile,amp2Bfile
-c     6. Got rid of ampUnitno,amp1BUnitno,amp2BUnitno
-c     7. Created thetaLow, thetaHigh
-c     8. Changed interval-->thetaInterval
-c     9. Added Oepsilon3 option to calcstring parsing
-c     10. Added whichbody option
-c     11. Added variables to control quadrature settings
-c     ********************************************************************
-c     hgrie 20 June 2014: modified for use of LebedevLaikov or Gaussian
-c     integration for theta & phi separately,
-c     for solid angle integral in (12) system
-c     
-c     This routine reads in the values of the external photon momentum &
-c     scattering angle in the lab frame. It takes them from the I/O
-c     unit denoted by inUnitno, where they are stored in MeV and degrees.
-c     
-c     *******************************************************************
-c     hgrie Feb 2016: added OQ4 and Odelta4 options,
-c     but activated only for twobody!     
-c     ********************************************************************
+c     j12max (max total ang mom in (12) subsystem) can be set in input file.
+c     Defaults are j12max=2 for onebody and j12max=1 for twobody.
+c     That is enough for convergence on the <1% level in amplitudes.
 c
-c     hgrie May 2017: implemented that j12max (max total ang mom in (12) subsystem)
-c                     can be set in input file.
-c                     Defaults are j12max=2 for onebody and j12max=1 for twobody.
-c                     That is enough for convergence on the <1% level in amplitudes.
-c
-ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc   
-ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
-c     hgrie May 2018
-c     Now the routine which reads input specific for twobody
-
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
       subroutine ReadinputTwobody(inUnitno,calctype,descriptors,
 c---- Variables to control radial quadrature settings------------------------
      &     NP12A,NP12B,P12A,P12B,P12C,
@@ -85,56 +28,45 @@ c---- Variables to control angular quadrature settings------------------------
      &     Nordth12,Nordphi12,
      &     NthBins12,NphiBins12,
      &     j12max,verbosity)
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+c     read input file for parameters for twobody
+cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 c     
       implicit none
-c     
+
       include '../common-densities/constants.def'
       include '../common-densities/params.def'
       include '../common-densities/calctype.def'
 c     
 c     
-c     VARIABLES PASSED INOUT:
+ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+c     INOUT/OUTPUT VARIABLES:
+c      
       character*200,intent(inout) :: descriptors ! additional descriptors of calculation for outputfilename
-      
-c     VARIABLES PASSED OUT:
+ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+c     OUTPUT VARIABLES:
 c     
-      integer,intent(out) :: calctype
-      integer,intent(out) :: AngularType12,Nordth12,Nordphi12,Nanggrid12
+      integer,intent(out) :: calctype ! which order/type of calculation to do
+      integer,intent(out) :: AngularType12,Nordth12,Nordphi12,Nanggrid12 ! define quadrature distribution for theta and phi integral
       integer,intent(out) :: NthBins12,NphiBins12
       integer,intent(out) :: j12max            !hgrie May 2017: maximum total ang mom in (12) system 
       
-c     BS: Added quadrature settings variables------------------------
       integer,intent(out) :: NP12A,NP12B
-      real*8,intent(out)  ::  P12A,P12B,P12C
-c     ---------------------------------------------------------------
-c     BS: Ultimately variable def's in Readme?
-c     ---------------------------------------------------------------
+      real*8,intent(out)  :: P12A,P12B,P12C
 c     
-c     calctype    - which calculation to do
-c     2=OQ2=Odelta0, the O(q²) calculation Chi PT calculation;
-c     3=OQ3=Odelta2, the full O(q³) Chi PT calculation;
-c     4=Oepsilon3=Odelta3, calculation with delta diagrams.
-c     
-c     NNincl - set to true if the NN cut contribution is to be included -- NEITHER USED NOR IMPLEMENTED YET
-c     
-c     Nordth12,NthBins12 - define quadrature distribution for theta integral
-c     NordPhi12,NphiBins12 - define quadrature distribution for phi integral
-c     
-c     *******************************************************************
-c     
-c     VARIABLES PASSED IN:
+ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+c     INPUT VARIABLES:
 c     
       integer,intent(in) :: inUnitno ! I/O unit containing all the input information
       integer,intent(in) :: verbosity
 c     
-c     *******************************************************************
-c     
-c     INTERNAL VARIABLES:
+ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
+c     LOCAL VARIABLES:
 c     
       character*500 calcstring ! holds info on type of calculation being done
       character*1  dummy ! a variable only for converting the integer j12max to a character string
       
-c     *******************************************************************
+ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc
 c     
       if (verbosity.eq.1000) continue ! keep for future use
       
